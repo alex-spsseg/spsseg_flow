@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flow Viewer</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; font-family: -apple-system, Segoe UI, Roboto, sans-serif; background: #0e1b33; }
+  #map { position: absolute; inset: 0; background: #0e1b33; }
+  #fill-canvas, #flow-canvas { position: absolute; left: 0; top: 0; pointer-events: none; }
+  #fill-canvas { z-index: 420; }
+  #flow-canvas { z-index: 450; }
+  #panel {
+    position: absolute; z-index: 1000; top: 12px; left: 12px; width: 320px; max-width: calc(100% - 24px);
+    max-height: calc(100% - 24px); overflow-y: auto;
+    background: rgba(14, 27, 51, 0.92); color: #e8eef7; border: 1px solid #1b3f95; border-radius: 10px; padding: 14px;
+  }
+  #panel.collapsed .body { display: none; }
+  #panel .head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  #panel h1 { font-size: 16px; margin: 0 0 2px; color: #fff; }
+  #panel .sub { font-size: 12px; color: #9fb2cc; margin-bottom: 4px; }
+  #toggle { width: auto !important; margin: 0 !important; padding: 2px 9px !important; }
+  #panel label { display: block; font-size: 12px; color: #9fb2cc; margin: 8px 0 3px; }
+  #panel select, #panel button {
+    width: 100%; background: #132447; color: #fff; border: 1px solid #1b3f95; border-radius: 6px; padding: 7px 8px; font-size: 13px;
+  }
+  #panel button { cursor: pointer; margin-top: 10px; }
+  #panel button:hover, #panel select:hover { border-color: #019fc4; }
+  #panel input[type=range] { width: 100%; }
+  #panel .check { display: flex; align-items: center; gap: 8px; margin: 12px 0 0; color: #e8eef7; font-size: 13px; }
+  #panel .check input { width: auto; }
+  #bwrap { display: none; }
+  details.sec { border-top: 1px solid #1b3f95; margin-top: 8px; padding-top: 0; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+  .grid2 .ctl { min-width: 0; }
+  .grid2 .ctl label { font-size: 11px; margin: 8px 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #lineopts.off { opacity: 0.4; pointer-events: none; }
+  details.sec > summary { cursor: pointer; color: #fff; font-size: 13px; font-weight: 600; padding: 7px 0 2px; list-style: none; user-select: none; }
+  details.sec > summary::-webkit-details-marker { display: none; }
+  details.sec > summary::before { content: "\25B8"; display: inline-block; width: 14px; color: #019fc4; transition: transform .12s; }
+  details.sec[open] > summary::before { transform: rotate(90deg); }
+  .pairlabel { font-size: 12px; color: #9fb2cc; margin: 10px 0 4px; }
+  .two { display: flex; gap: 6px; }
+  #panel .two select { width: auto; flex: 1 1 0; min-width: 0; }
+  #lineopts.off { opacity: 0.4; pointer-events: none; }
+  .viewblock { margin-top: 6px; }
+  .subrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 8px 0 2px; }
+  .subrow .sub { margin: 0; }
+  .headbtns { display: flex; gap: 5px; flex: none; }
+  #panel .headbtns button { width: auto; margin: 0; padding: 3px 9px; font-size: 12px; }
+  .scenhead { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; padding-top: 10px; border-top: 1px solid #1b3f95; }
+  .scenhead .t { font-size: 13px; font-weight: 600; color: #fff; }
+  #panel .scenhead .check { margin: 0; font-size: 12px; color: #e8eef7; }
+  .pairrow { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+  .pairrow .two { flex: 1 1 auto; min-width: 0; }
+  .pairrow .side { display: none; flex: none; width: 22px; height: 22px; border-radius: 50%; background: #1b3f95; color: #fff; font-size: 11px; font-weight: 700; align-items: center; justify-content: center; }
+  #panel.cmp .pairrow .side { display: inline-flex; }
+  .scenfoot { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+  #panel .scenfoot .check { margin: 0; font-size: 12px; }
+  #panel .scenfoot button { width: auto; margin: 0; padding: 4px 10px; font-size: 12px; }
+  details.sec > summary { display: flex; align-items: baseline; gap: 8px; }
+  details.sec > summary .hint { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 400; font-size: 11px; color: #9fb2cc; }
+  .viewblock .cap { font-size: 12px; color: #9fb2cc; margin: 8px 0 4px; }
+  .seg3 { display: flex; border: 1px solid #1b3f95; border-radius: 6px; overflow: hidden; }
+  #panel .seg3 button { margin: 0; flex: 1 1 0; width: auto; border: none; border-radius: 0; background: #132447; padding: 8px 4px; font-size: 13px; }
+  #panel .seg3 button + button { border-left: 1px solid #1b3f95; }
+  #panel .seg3 button.on { background: #019fc4; color: #fff; font-weight: 600; }
+  table.mt { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 6px; }
+  table.mt th { color: #9fb2cc; font-weight: 600; text-align: right; padding: 2px 4px 4px; }
+  table.mt td { padding: 3px 4px; text-align: right; border-top: 1px solid rgba(27,63,149,.55); color: #e8eef7; }
+  table.mt th:first-child, table.mt td:first-child { text-align: left; color: #9fb2cc; }
+  table.mt td small { display: block; color: #7f93b0; }
+  table.mt tr.sub td { color: #9fb2cc; border-top: none; padding-top: 0; }
+  table.mt tr.head td { border-top: 1px solid #1b3f95; color: #fff; font-weight: 600; padding-top: 8px; }
+  .crit { margin-top: 4px; }
+  .crithead { margin-top: 12px; padding-top: 8px; border-top: 1px solid #1b3f95; font-size: 12px; font-weight: 600; color: #fff; line-height: 1.4; }
+  table.mt td:first-child { white-space: nowrap; }
+  .crit .cr { display: flex; align-items: center; gap: 6px; margin: 6px 0; font-size: 12px; color: #9fb2cc; }
+  .crit .cr span.l { width: 54px; }
+  #panel input[type=number] { width: 60px; background: #132447; color: #fff; border: 1px solid #1b3f95; border-radius: 6px; padding: 5px 6px; font-size: 12px; }
+  .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; background: rgb(255,150,30); margin-right: 6px; vertical-align: -1px; }
+  #metnote { margin-top: 8px; font-size: 11px; color: #7f93b0; line-height: 1.4; }
+  #panel .two select#flowA, #panel .two select#flowB { flex: 1.5 1 0; }
+  .dual { position: relative; height: 30px; margin-top: 4px; }
+  .dual .track { position: absolute; left: 8px; right: 8px; top: 13px; height: 4px; border-radius: 2px; background: #2a3d66; }
+  .dual .seg { position: absolute; top: 13px; height: 4px; border-radius: 2px; background: #019fc4; }
+  #panel .dual input[type=range] { position: absolute; left: 0; top: 6px; width: 100%; height: 18px; margin: 0; background: none;
+    pointer-events: none; -webkit-appearance: none; appearance: none; }
+  .dual input[type=range]::-webkit-slider-runnable-track { background: none; -webkit-appearance: none; height: 18px; }
+  .dual input[type=range]::-moz-range-track { background: none; }
+  .dual input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; pointer-events: auto; width: 16px; height: 16px; margin-top: 1px;
+    border-radius: 50%; background: #fff; border: 2px solid #019fc4; cursor: ew-resize; box-shadow: 0 1px 4px rgba(0,0,0,.5); }
+  .dual input[type=range]::-moz-range-thumb { pointer-events: auto; width: 12px; height: 12px; border-radius: 50%; background: #fff;
+    border: 2px solid #019fc4; cursor: ew-resize; box-shadow: 0 1px 4px rgba(0,0,0,.5); }
+  #legend { position: absolute; z-index: 950; right: 12px; bottom: 30px; width: 220px; background: rgba(14,27,51,0.9); border: 1px solid #1b3f95;
+    border-radius: 8px; padding: 8px 10px; font-size: 11px; color: #9fb2cc; }
+  #legend .bar { height: 10px; border-radius: 3px; margin: 4px 0 2px; }
+  #legend .row { display: flex; justify-content: space-between; }
+  #note { margin-top: 8px; font-size: 11px; color: #7f93b0; line-height: 1.4; }
+  #status { position: absolute; z-index: 1100; left: 50%; top: 14px; transform: translateX(-50%);
+    background: rgba(14,27,51,0.92); color: #e8eef7; border: 1px solid #1b3f95; border-radius: 6px; padding: 6px 12px; font-size: 13px; display: none; }
+  #err { position: absolute; z-index: 1101; inset: 40% 10% auto 10%; text-align: center; color: #e0a5a5; background: rgba(14,27,51,0.95);
+    border: 1px solid #5a2a2a; border-radius: 8px; padding: 16px; display: none; }
+  #swipe { position: absolute; z-index: 900; top: 0; bottom: 0; width: 28px; margin-left: -14px; cursor: ew-resize; display: none; touch-action: none;
+    background: linear-gradient(90deg, transparent 12px, #fff 12px, #fff 15px, transparent 15px); }
+  #swipe::after { content: "\2194"; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 34px; height: 34px; line-height: 32px;
+    text-align: center; border-radius: 50%; background: #fff; color: #132447; font-size: 18px; box-shadow: 0 1px 6px rgba(0,0,0,.5); }
+  .tag { position: absolute; z-index: 900; top: 12px; max-width: 30%; padding: 5px 10px; border-radius: 6px; font-size: 13px; font-weight: 600;
+    background: rgba(14,27,51,0.88); color: #fff; border: 1px solid #1b3f95; display: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #probe { position: absolute; z-index: 1050; display: none; transform: translate(-50%, calc(-100% - 14px)); max-width: 260px;
+    background: #132447; color: #e8eef7; border: 1px solid #1b3f95; border-radius: 8px; padding: 9px 30px 9px 12px;
+    font-size: 12px; line-height: 1.5; box-shadow: 0 2px 10px rgba(0,0,0,.55); }
+  #probe .x { position: absolute; top: 3px; right: 6px; width: 22px !important; margin: 0 !important; padding: 0 !important; border: none !important;
+    background: none !important; color: #9fb2cc; font-size: 17px; line-height: 20px; cursor: pointer; }
+  #probe .x:hover { color: #fff; }
+  #probedot { position: absolute; z-index: 1049; display: none; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%;
+    border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.6); pointer-events: none; }
+  .leaflet-popup-content-wrapper { background: #132447; color: #e8eef7; border: 1px solid #1b3f95; }
+  .leaflet-popup-tip { background: #132447; }
+  @media (max-width: 700px) { #panel { width: 250px; } }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<canvas id="fill-canvas"></canvas>
+<canvas id="flow-canvas"></canvas>
+<div id="swipe"></div>
+<div class="tag" id="tagA"></div>
+<div class="tag" id="tagB"></div>
+<div id="probedot"></div>
+<div id="probe"></div>
+<div id="status">Loading...</div>
+<div id="err"></div>
+
+<div id="panel">
+  <div class="head">
+    <h1 id="title">Flow Viewer</h1>
+    <button id="toggle" type="button" title="Show or hide controls">&#9776;</button>
+  </div>
+  <div class="subrow">
+    <span class="sub" id="sub"></span>
+    <span class="headbtns">
+      <button id="pause" type="button" title="Pause or play the flow animation">Pause</button>
+      <button id="link" type="button" title="Copy a link to this exact view">Link</button>
+      <button id="save" type="button" title="Save a picture (PNG)">Save</button>
+    </span>
+  </div>
+  <div class="body">
+    <div class="viewblock">
+      <div class="cap">Show water as</div>
+      <div class="seg3" id="fillseg">
+        <button type="button" data-v="depth">Depth</button>
+        <button type="button" data-v="velocity">Velocity</button>
+        <button type="button" data-v="none">None</button>
+      </div>
+      <select id="fill" style="display:none">
+        <option value="depth">Depth</option>
+        <option value="velocity">Velocity</option>
+        <option value="none">None (flow lines only)</option>
+      </select>
+      <label class="check"><input type="checkbox" id="showlines" checked> Show flow animation</label>
+      <div id="noflow" style="display:none; margin-top:6px; font-size:11px; color:#f2b36b;">No flow direction for this scenario, so it shows shading only.</div>
+    </div>
+
+    <div class="scenhead"><span class="t">Scenario</span><label class="check"><input type="checkbox" id="cmp"> Compare</label></div>
+    <div id="pairA" class="pairrow">
+      <span class="side">L</span>
+      <div class="two">
+        <select id="flowA" aria-label="Flow"></select>
+        <select id="scenA" aria-label="Scenario"></select>
+      </div>
+    </div>
+    <div id="fbA" style="display:none">
+      <label for="q" id="fblabelA">Discharge</label>
+      <select id="q"></select>
+    </div>
+    <div id="bwrap">
+      <div id="pairB" class="pairrow">
+        <span class="side">R</span>
+        <div class="two">
+          <select id="flowB" aria-label="Flow, right side"></select>
+          <select id="scenB" aria-label="Scenario, right side"></select>
+        </div>
+      </div>
+      <div id="fbB" style="display:none">
+        <label for="qb">Right side</label>
+        <select id="qb"></select>
+      </div>
+      <div class="scenfoot">
+        <label class="check" id="sameflowrow"><input type="checkbox" id="sameflow" checked> Same flow</label>
+        <button id="swap" type="button" title="Swap the left and right scenarios">Swap sides</button>
+      </div>
+    </div>
+
+    <details class="sec" id="metsec">
+      <summary>Metrics <span class="hint" id="metsum"></span></summary>
+      <div id="metrics"></div>
+      <label class="check"><input type="checkbox" id="mpic" checked> Add these numbers to saved pictures</label>
+      <div id="metnote">Numbers come from the mapped wet area at the raster resolution, so treat them as estimates.</div>
+    </details>
+
+    <details class="sec" id="habsec">
+      <summary>Habitat criteria <span class="hint" id="habsum">off</span></summary>
+      <div class="crit">
+        <div class="cr"><span class="l">Depth</span><input id="cdmin" type="number" step="0.1" min="0" placeholder="min"> to <input id="cdmax" type="number" step="0.1" min="0" placeholder="max"></div>
+        <div class="cr"><span class="l">Velocity</span><input id="cvmin" type="number" step="0.1" min="0" placeholder="min"> to <input id="cvmax" type="number" step="0.1" min="0" placeholder="max"></div>
+      </div>
+      <div id="metnote2" style="font-size:11px;color:#7f93b0;margin-top:2px">In <span id="critunits"></span>. Leave a box empty for no limit.</div>
+      <label class="check"><input type="checkbox" id="hl"> <span><span class="swatch"></span>Highlight these cells on the map</span></label>
+      <div id="critres"></div>
+    </details>
+
+    <details class="sec" id="appsec">
+      <summary>Appearance</summary>
+      <div class="grid2">
+        <div class="ctl"><label for="op">Shading opacity</label><input id="op" type="range" min="0" max="1" step="0.05" value="0.8"></div>
+        <div class="ctl"><label for="dimbase">Dim imagery <span id="dimv"></span></label><input id="dimbase" type="range" min="0" max="0.85" step="0.05" value="0.2"></div>
+      </div>
+      <div id="velopts" style="display:none">
+        <label for="vmax">Velocity scale max <span id="vmaxv"></span></label>
+        <input id="vmax" type="range" min="10" max="100" step="5" value="100">
+        <label class="check"><input type="checkbox" id="stretch"> Stretch slow speeds</label>
+      </div>
+      <div id="lineopts" class="grid2">
+        <div class="ctl"><label for="dens">Line density <span id="densv"></span></label><input id="dens" type="range" min="0.25" max="3" step="0.05" value="1"></div>
+        <div class="ctl"><label for="spd">Speed <span id="spdv"></span></label><input id="spd" type="range" min="0.2" max="4" step="0.1" value="1"></div>
+        <div class="ctl"><label for="trail">Trail length</label><input id="trail" type="range" min="0.85" max="0.985" step="0.005" value="0.95"></div>
+      </div>
+      <div id="note">Particle speed is scaled for visibility and shows relative flow only. Click the map for depth and velocity at a point.</div>
+    </details>
+
+    <details class="sec">
+      <summary>Filters</summary>
+      <label>Show velocities <span id="vrange"></span></label>
+      <div class="dual">
+        <div class="track"></div><div class="seg" id="vseg"></div>
+        <input id="vlo" type="range" min="0" max="1" step="0.01" value="0" aria-label="Lowest velocity shown">
+        <input id="vhi" type="range" min="0" max="1" step="0.01" value="1" aria-label="Highest velocity shown">
+      </div>
+      <label class="check"><input type="checkbox" id="vshade"> Also dim the shading outside this range</label>
+      <div id="confwrap" style="display:none">
+        <label for="minconf">Hide uncertain flow direction <span id="minconfv"></span></label>
+        <input id="minconf" type="range" min="0" max="0.9" step="0.05" value="0">
+      </div>
+    </details>
+  </div>
+</div>
+
+<div id="legend">
+  <div id="legtitle">Water depth</div>
+  <div class="bar" id="legbar"></div>
+  <div class="row"><span>0</span><span id="legmid"></span><span id="legmax"></span></div>
+</div>
+
+<script>
+(function () {
+  var params = new URLSearchParams(location.search);
+  var siteId = params.get('site') || 'demo';
+  var base = 'sites/' + encodeURIComponent(siteId) + '/';
+  var $ = function (id) { return document.getElementById(id); };
+
+  var manifest = null, map = null;
+  var cache = {};
+  var compare = false, swipeFrac = 0.5;
+  var setA = { particles: [], scn: null }, setB = { particles: [], scn: null };
+  var paused = false, linesOn = true, selToken = 0;
+  var canvas = $('flow-canvas'), ctx = canvas.getContext('2d');
+  var fillCanvas = $('fill-canvas'), fctx = fillCanvas.getContext('2d');
+  var viewRect = null;
+
+  function status(msg) { var s = $('status'); s.style.display = msg ? 'block' : 'none'; s.textContent = msg || ''; }
+  function fail(msg) { var e = $('err'); e.style.display = 'block'; e.textContent = msg; status(''); }
+
+  // ---- colour ramps ------------------------------------------------------
+  var VEL_STOPS = [[0, [68, 1, 84]], [0.25, [59, 82, 139]], [0.5, [33, 145, 140]], [0.75, [94, 201, 98]], [1, [253, 231, 37]]];
+  function velRange() {
+    var lo = +$('vlo').value, hi = +$('vhi').value;
+    return { lo: lo, hi: hi, active: lo > 0 || hi < 1 };
+  }
+  function clearFills() { Object.keys(cache).forEach(function (k) { cache[k].fills = {}; }); }
+  function velParams() {
+    var frac = (+$('vmax').value || 100) / 100;
+    return { vmax: manifest.maxSpeed * frac, stretch: $('stretch').checked };
+  }
+  function velColor(t, out) {
+    t = Math.max(0, Math.min(1, t));
+    for (var k = 1; k < VEL_STOPS.length; k++) {
+      if (t <= VEL_STOPS[k][0]) {
+        var a = VEL_STOPS[k - 1], b = VEL_STOPS[k], f = (t - a[0]) / (b[0] - a[0]);
+        out[0] = a[1][0] + (b[1][0] - a[1][0]) * f; out[1] = a[1][1] + (b[1][1] - a[1][1]) * f;
+        out[2] = a[1][2] + (b[1][2] - a[1][2]) * f; out[3] = 225; return;
+      }
+    }
+  }
+  function depthColor(t, out) {
+    var s = Math.sqrt(Math.max(0, Math.min(1, t)));
+    if (s < 0.5) { var k = s / 0.5; out[0] = 150 - 120 * k; out[1] = 225 - 105 * k; out[2] = 240 - 20 * k; out[3] = 150 + 60 * k; }
+    else { var k2 = (s - 0.5) / 0.5; out[0] = 30 - 20 * k2; out[1] = 120 - 80 * k2; out[2] = 220 - 70 * k2; out[3] = 210 + 40 * k2; }
+  }
+  var LEGEND_CSS = {
+    depth: 'linear-gradient(90deg, rgba(150,225,240,0.6) 0%, rgba(30,120,220,0.82) 25%, rgba(10,40,150,0.98) 100%)',
+    velocity: 'linear-gradient(90deg, rgb(68,1,84), rgb(59,82,139) 25%, rgb(33,145,140) 50%, rgb(94,201,98) 75%, rgb(253,231,37))'
+  };
+  var LEGEND_STOPS = {
+    depth: [[0, 'rgba(150,225,240,0.6)'], [0.25, 'rgba(30,120,220,0.82)'], [1, 'rgba(10,40,150,0.98)']],
+    velocity: [[0, 'rgb(68,1,84)'], [0.25, 'rgb(59,82,139)'], [0.5, 'rgb(33,145,140)'], [0.75, 'rgb(94,201,98)'], [1, 'rgb(253,231,37)']]
+  };
+
+  fetch(base + 'manifest.json', { cache: 'no-store' })
+    .then(function (r) { if (!r.ok) throw new Error('Site "' + siteId + '" was not found.'); return r.json(); })
+    .then(init)
+    .catch(function (e) { fail(e.message || String(e)); });
+
+  function mercToLatLng(x, y) {
+    var R = 6378137;
+    return L.latLng((2 * Math.atan(Math.exp(y / R)) - Math.PI / 2) * 180 / Math.PI, x / R * 180 / Math.PI);
+  }
+
+  function init(m) {
+    manifest = m;
+    document.title = m.title + ' | Flow Viewer';
+    $('title').textContent = m.title;
+    $('sub').textContent = m.discharges.length + ' scenario' + (m.discharges.length === 1 ? '' : 's');
+
+    ['q', 'qb'].forEach(function (id) {
+      var sel = $(id);
+      m.discharges.forEach(function (d) {
+        var o = document.createElement('option');
+        o.value = d.id;
+        o.textContent = d.label + (d.value ? ' (' + d.value + ')' : '');
+        sel.appendChild(o);
+      });
+    });
+    if (m.discharges.length > 1) $('qb').value = m.discharges[m.discharges.length - 1].id;
+    var baseline = m.discharges.filter(function (d) { return isExisting((d.name || '') + ' ' + (d.label || '')); })[0];
+    if (baseline) $('q').value = baseline.id;
+    if (m.discharges.length < 2) $('cmp').parentNode.style.display = 'none';
+    setupPairs(m);
+
+    map = L.map('map', { zoomControl: false, maxZoom: 22, zoomSnap: 0.25, zoomAnimation: false });
+    L.control.zoom({ position: 'topright' }).addTo(map);
+    L.tileLayer(m.basemap.url, {
+      maxNativeZoom: m.basemap.maxNativeZoom || 19, maxZoom: 22, attribution: m.basemap.attribution || ''
+    }).addTo(map);
+    L.control.scale({ position: 'bottomleft', imperial: true, metric: true }).addTo(map);
+    applyDim();
+    map.fitBounds(L.latLngBounds(m.bounds4326));
+
+    ['move', 'zoom', 'viewreset'].forEach(function (ev) { map.on(ev, function () { clearTrails(); redrawFill(); }); });
+    map.on('resize', function () { resizeCanvas(); updateSwipePos(); redrawFill(); });
+    map.on('click', onMapClick);
+    map.on('moveend', scheduleUrl);
+    ['move', 'zoom', 'viewreset', 'resize'].forEach(function (ev) { map.on(ev, placeProbe); });
+    window.addEventListener('resize', function () { map.invalidateSize(); });
+    resizeCanvas();
+
+    $('q').addEventListener('change', applySelection);
+    $('qb').addEventListener('change', applySelection);
+    $('cmp').addEventListener('change', function () {
+      compare = $('cmp').checked;
+      $('bwrap').style.display = compare ? 'block' : 'none';
+      $('panel').classList.toggle('cmp', compare);
+      if (!grid) $('fblabelA').textContent = compare ? 'Left side' : 'Discharge';
+      if (grid && compare) syncPairs('A');
+      $('swipe').style.display = compare ? 'block' : 'none';
+      updateSwipePos();
+      applySelection();
+    });
+    function syncFillSeg() {
+      Array.prototype.forEach.call(document.querySelectorAll('#fillseg button'), function (b) { b.classList.toggle('on', b.getAttribute('data-v') === $('fill').value); });
+    }
+    Array.prototype.forEach.call(document.querySelectorAll('#fillseg button'), function (b) {
+      b.addEventListener('click', function () { $('fill').value = b.getAttribute('data-v'); $('fill').dispatchEvent(new Event('change')); });
+    });
+    $('swap').addEventListener('click', function () {
+      if (grid) {
+        var fa = $('flowA').value, sa = $('scenA').value, fb = $('flowB').value, sb = $('scenB').value;
+        $('flowA').value = fb; fillScenOptions($('scenA'), fb, sb);
+        $('flowB').value = fa; fillScenOptions($('scenB'), fa, sa);
+        syncPairs('swap');
+      } else {
+        var t = $('q').value; $('q').value = $('qb').value; $('qb').value = t;
+        applySelection();
+      }
+    });
+    $('fill').addEventListener('change', function () { syncFillSeg(); updateLegend(); redrawFill(); scheduleUrl(); });
+    syncFillSeg();
+    $('dens').addEventListener('input', setParticleCount);
+    $('dens').addEventListener('input', function () { $('densv').textContent = (+$('dens').value).toFixed(2).replace(/0$/, '') + 'x'; });
+    $('dimbase').addEventListener('input', applyDim);
+    ['cdmin', 'cdmax', 'cvmin', 'cvmax'].forEach(function (id) { $(id).addEventListener('input', critChanged); });
+    $('hl').addEventListener('change', function () { redrawFill(); scheduleUrl(); });
+    $('showlines').addEventListener('change', function () {
+      linesOn = $('showlines').checked;
+      scheduleUrl();
+      $('lineopts').classList.toggle('off', !linesOn);
+      if (linesOn) { setParticleCount(); } else { clearTrails(); }
+    });
+    $('spd').addEventListener('input', function () { $('spdv').textContent = $('spd').value + 'x'; });
+    function rangeLabel() {
+      var r = velRange();
+      $('vseg').style.left = 'calc(8px + (100% - 16px) * ' + r.lo + ')';
+      $('vseg').style.width = 'calc((100% - 16px) * ' + (r.hi - r.lo) + ')';
+      // whichever thumb is nearer the middle of its travel stays grabbable when the two meet
+      $('vlo').style.zIndex = r.lo >= 0.5 ? 3 : 2;
+      $('vhi').style.zIndex = r.lo >= 0.5 ? 2 : 3;
+      $('vrange').textContent = r.active
+        ? 'from ' + (r.lo * manifest.maxSpeed).toFixed(1) + ' to ' + (r.hi >= 1 ? 'max' : (r.hi * manifest.maxSpeed).toFixed(1)) + ' ' + manifest.units.velocity
+        : 'all';
+    }
+    function rangeChanged(which) {
+      var lo = $('vlo'), hi = $('vhi');
+      if (+lo.value > +hi.value) { if (which === 'lo') hi.value = lo.value; else lo.value = hi.value; }
+      rangeLabel();
+      if ($('vshade').checked) { clearFills(); redrawFill(); }
+      scheduleUrl();
+    }
+    $('vlo').addEventListener('input', function () { rangeChanged('lo'); });
+    $('vhi').addEventListener('input', function () { rangeChanged('hi'); });
+    $('vshade').addEventListener('change', function () { clearFills(); redrawFill(); });
+    rangeLabel();
+    function minConfLabel() {
+      var f = +$('minconf').value;
+      $('minconfv').textContent = f > 0 ? 'below ' + Math.round(f * 100) + '% confidence' : 'off';
+    }
+    $('minconf').addEventListener('input', minConfLabel);
+    minConfLabel();
+    if (m.confidence) $('confwrap').style.display = 'block';
+    $('op').addEventListener('input', redrawFill);
+    $('vmax').addEventListener('input', velScaleChanged);
+    $('stretch').addEventListener('change', velScaleChanged);
+    $('pause').addEventListener('click', function () { paused = !paused; $('pause').textContent = paused ? 'Play' : 'Pause'; });
+    $('save').addEventListener('click', exportPng);
+    $('link').addEventListener('click', copyLink);
+    $('toggle').addEventListener('click', function () { $('panel').classList.toggle('collapsed'); });
+    if (window.innerWidth < 700) $('panel').classList.add('collapsed');
+    $('densv').textContent = (+$('dens').value).toFixed(1) + 'x';
+    $('spdv').textContent = $('spd').value + 'x';
+    var secs = Array.prototype.slice.call(document.querySelectorAll('details.sec'));
+    secs.forEach(function (d) {
+      d.addEventListener('toggle', function () {
+        if (!d.open) return;
+        secs.forEach(function (o) { if (o !== d && o.open) o.open = false; });
+      });
+    });
+    setupSwipe();
+    updateLegend();
+
+    // Opens the view described by the address, if it names one
+    function applyDeepLink() {
+      var P = new URLSearchParams(location.search);
+      var ids = manifest.discharges.map(function (d) { return d.id; });
+      var a = P.get('a'), b = P.get('b'), c = P.get('c') === '1';
+      if (ids.indexOf(a) >= 0) {
+        if (grid) { var ia = grid.items.filter(function (it) { return it.d.id === a; })[0]; $('flowA').value = ia.flow; fillScenOptions($('scenA'), ia.flow, ia.scen); }
+        $('q').value = a;
+      }
+      if (ids.indexOf(b) >= 0) {
+        if (grid) {
+          var ib = grid.items.filter(function (it) { return it.d.id === b; })[0];
+          $('flowB').value = ib.flow; fillScenOptions($('scenB'), ib.flow, ib.scen);
+          $('sameflow').checked = ib.flow === $('flowA').value;
+        }
+        $('qb').value = b;
+      }
+      var f = P.get('f');
+      if (f === 'velocity' || f === 'none') { $('fill').value = f; $('fill').dispatchEvent(new Event('change')); }
+      if (P.get('l') === '0') { $('showlines').checked = false; $('showlines').dispatchEvent(new Event('change')); }
+      var lo = parseFloat(P.get('vlo')), hi = parseFloat(P.get('vhi'));
+      if (isFinite(lo) || isFinite(hi)) {
+        if (isFinite(lo)) $('vlo').value = Math.max(0, Math.min(1, lo));
+        if (isFinite(hi)) $('vhi').value = Math.max(0, Math.min(1, hi));
+        rangeChanged('lo');
+      }
+      var cr = P.get('crit');
+      if (cr) {
+        var parts = cr.split(',');
+        ['cdmin', 'cdmax', 'cvmin', 'cvmax'].forEach(function (id, i) { $(id).value = parts[i] || ''; });
+        if (P.get('hl') === '1') { $('hl').checked = true; }
+      }
+      if (c && ids.length > 1) { $('cmp').checked = true; $('cmp').dispatchEvent(new Event('change')); }
+      var sw = parseFloat(P.get('sw'));
+      if (isFinite(sw)) { swipeFrac = Math.max(0.03, Math.min(0.97, sw)); updateSwipePos(); }
+      var ll = (P.get('ll') || '').split(','), z = parseFloat(P.get('z'));
+      if (ll.length === 2 && isFinite(parseFloat(ll[0])) && isFinite(parseFloat(ll[1]))) map.setView([parseFloat(ll[0]), parseFloat(ll[1])], isFinite(z) ? z : map.getZoom());
+    }
+    applyDeepLink();
+    applySelection();
+    requestAnimationFrame(frame);
+  }
+
+  // ---- data loading ------------------------------------------------------
+  // ---- background dimming -------------------------------------------------
+  function applyDim() {
+    var dv = +$('dimbase').value;
+    $('dimv').textContent = dv > 0 ? Math.round(dv * 100) + '%' : 'off';
+    if (map) map.getPane('tilePane').style.filter = dv > 0 ? 'brightness(' + (1 - dv) + ')' : '';
+  }
+
+  // ---- Flow and Scenario dropdowns -----------------------------------------
+  // Names like Q10_PC_FG split into a flow (Q10) and a scenario (PC FG). Anything else keeps the single list.
+  var grid = null;
+  function buildGrid(m) {
+    var items = [];
+    for (var k = 0; k < m.discharges.length; k++) {
+      var d = m.discharges[k], mm = /^(Q\d+)(?:[_\s\-]+(.*))?$/i.exec(String(d.name || d.id));
+      if (!mm) return null;
+      items.push({ d: d, flow: mm[1].toUpperCase(), scen: (mm[2] || '').trim() });
+    }
+    var flows = [], scens = [];
+    items.forEach(function (it) {
+      if (flows.indexOf(it.flow) < 0) flows.push(it.flow);
+      if (scens.indexOf(it.scen) < 0) scens.push(it.scen);
+    });
+    flows.sort(function (a, b) { return parseInt(a.slice(1), 10) - parseInt(b.slice(1), 10); });
+    if (flows.length < 2 && scens.length < 2) return null;
+    return { items: items, flows: flows, scens: scens };
+  }
+  // Scenario names that mean the baseline: EC, ec, Existing, Existing conditions
+  function isExisting(text) { return /(^|[^a-z])(ec|existing)([^a-z]|$)/i.test(String(text || '')); }
+  function itemFor(flow, scen) {
+    return grid.items.filter(function (it) { return it.flow === flow && it.scen === scen; })[0] || null;
+  }
+  function scenText(s) {
+    return s ? s.replace(/_/g, ' ').split(' ').map(function (w) { return w.length <= 2 ? w.toUpperCase() : w; }).join(' ') : 'All';
+  }
+  function fillFlowOptions(sel) {
+    sel.innerHTML = '';
+    grid.flows.forEach(function (f) {
+      var its = grid.items.filter(function (it) { return it.flow === f; });
+      var vals = [];
+      its.forEach(function (it) { if (it.d.value && vals.indexOf(it.d.value) < 0) vals.push(it.d.value); });
+      var o = document.createElement('option');
+      o.value = f;
+      o.textContent = grid.scens.length === 1 ? (its[0].d.label + (its[0].d.value ? ' (' + its[0].d.value + ')' : ''))
+                                              : f + (vals.length === 1 ? ' (' + vals[0] + ')' : '');
+      sel.appendChild(o);
+    });
+  }
+  function fillScenOptions(sel, flow, keep) {
+    sel.innerHTML = '';
+    grid.items.filter(function (it) { return it.flow === flow; }).forEach(function (it) {
+      var o = document.createElement('option');
+      o.value = it.scen; o.textContent = scenText(it.scen);
+      sel.appendChild(o);
+    });
+    var have = Array.prototype.map.call(sel.options, function (o) { return o.value; });
+    sel.value = have.indexOf(keep) >= 0 ? keep : have[0];
+  }
+  // Push the dropdown choices into the hidden id lists, then redraw.
+  function syncPairs(changed) {
+    var sameflow = $('sameflow').checked;
+    if (compare && sameflow) {
+      if (changed === 'B') { $('flowA').value = $('flowB').value; fillScenOptions($('scenA'), $('flowA').value, $('scenA').value); }
+      else if (changed === 'A') { $('flowB').value = $('flowA').value; fillScenOptions($('scenB'), $('flowB').value, $('scenB').value); }
+    }
+    var a = itemFor($('flowA').value, $('scenA').value), b = itemFor($('flowB').value, $('scenB').value);
+    if (a) $('q').value = a.d.id;
+    if (b) $('qb').value = b.d.id;
+    applySelection();
+  }
+  function setupPairs(m) {
+    grid = buildGrid(m);
+    if (!grid) {
+      $('pairA').style.display = 'none'; $('fbA').style.display = 'block'; $('fbB').style.display = 'block';
+      $('pairB').style.display = 'none'; $('sameflowrow').style.display = 'none';
+      return;
+    }
+    ['flowA', 'flowB'].forEach(function (id) { fillFlowOptions($(id)); });
+    var existing = grid.items.filter(function (it) { return isExisting(it.scen); });
+    var first = existing.filter(function (it) { return it.flow === grid.flows[0]; })[0] || existing[0] || grid.items[0];
+    $('flowA').value = first.flow;
+    fillScenOptions($('scenA'), first.flow, first.scen);
+    // Right side starts on the same flow, next scenario along (or the next flow when there is one scenario)
+    var other = grid.items.filter(function (it) { return it.flow === first.flow && it.scen !== first.scen; })[0]
+             || grid.items.filter(function (it) { return it.flow !== first.flow; })[0] || first;
+    $('flowB').value = other.flow;
+    fillScenOptions($('scenB'), other.flow, other.scen);
+    $('sameflow').checked = other.flow === first.flow;
+    $('flowA').parentNode.style.display = '';
+    // hide a dropdown that has only one choice
+    $('flowA').style.display = $('flowB').style.display = grid.flows.length < 2 ? 'none' : '';
+    $('scenA').style.display = $('scenB').style.display = grid.scens.length < 2 ? 'none' : '';
+    $('sameflowrow').style.display = (grid.flows.length < 2 || grid.scens.length < 2) ? 'none' : '';
+    $('flowA').addEventListener('change', function () { fillScenOptions($('scenA'), $('flowA').value, $('scenA').value); syncPairs('A'); });
+    $('scenA').addEventListener('change', function () { syncPairs('A'); });
+    $('flowB').addEventListener('change', function () { fillScenOptions($('scenB'), $('flowB').value, $('scenB').value); syncPairs('B'); });
+    $('scenB').addEventListener('change', function () { syncPairs('B'); });
+    $('sameflow').addEventListener('change', function () {
+      if ($('sameflow').checked) { $('flowB').value = $('flowA').value; fillScenOptions($('scenB'), $('flowB').value, $('scenB').value); }
+      syncPairs('A');
+    });
+    var a = itemFor($('flowA').value, $('scenA').value), b = itemFor($('flowB').value, $('scenB').value);
+    if (a) $('q').value = a.d.id;
+    if (b) $('qb').value = b.d.id;
+  }
+
+  function loadImg(url) {
+    return new Promise(function (resolve, reject) {
+      var im = new Image();
+      im.onload = function () {
+        var c = document.createElement('canvas');
+        c.width = im.naturalWidth; c.height = im.naturalHeight;
+        var x = c.getContext('2d', { willReadFrequently: true });
+        x.drawImage(im, 0, 0);
+        resolve(x.getImageData(0, 0, c.width, c.height));
+      };
+      im.onerror = function () { reject(new Error('Could not load ' + url)); };
+      im.src = url;
+    });
+  }
+
+  function loadScenario(id) {
+    if (cache[id]) return Promise.resolve(cache[id]);
+    return Promise.all([loadImg(base + 'depth_' + id + '.png'), loadImg(base + 'flow_' + id + '.png')]).then(function (r) {
+      var d = (manifest.discharges.filter(function (x) { return x.id === id; })[0]) || { id: id, label: id };
+      return (cache[id] = { id: id, meta: d, depth: r[0], flow: r[1], fills: {} });
+    });
+  }
+
+  // Colour raster for one scenario and one shading mode, built once and kept.
+  function fillFor(scn, mode) {
+    var vr = velRange(), dim = $('vshade') && $('vshade').checked && vr.active;
+    var key = mode + (dim ? '|' + vr.lo + '-' + vr.hi : '');
+    if (scn.fills[key]) return scn.fills[key];
+    var W = manifest.width, H = manifest.height;
+    var c = document.createElement('canvas'); c.width = W; c.height = H;
+    var x = c.getContext('2d');
+    var out = x.createImageData(W, H), o = out.data, rgba = [0, 0, 0, 0];
+    var dsrc = scn.depth.data, fsrc = scn.flow.data;
+    var vp = velParams();
+    for (var i = 0, n = W * H; i < n; i++) {
+      var p = i * 4;
+      if (dsrc[p + 3] === 0) continue;
+      if (mode === 'depth') depthColor((dsrc[p] * 256 + dsrc[p + 1]) / 65535, rgba);
+      else {
+        var tv = (fsrc[p + 2] / 255 * manifest.maxSpeed) / vp.vmax;
+        velColor(vp.stretch ? Math.sqrt(Math.min(1, tv)) : tv, rgba);
+      }
+      var al = rgba[3];
+      if (dim) { var sf = fsrc[p + 2] / 255; if (sf < vr.lo || (vr.hi < 1 && sf > vr.hi)) al *= 0.12; }
+      o[p] = rgba[0]; o[p + 1] = rgba[1]; o[p + 2] = rgba[2]; o[p + 3] = al;
+    }
+    x.putImageData(out, 0, 0);
+    return (scn.fills[key] = c);
+  }
+
+  function applySelection() {
+    status('Loading...');
+    var tok = ++selToken;
+    var ids = [$('q').value];
+    if (compare) ids.push($('qb').value);
+    Promise.all(ids.map(loadScenario)).then(function (r) {
+      if (tok !== selToken) return;
+      setA.scn = r[0]; setA.particles = [];
+      setB.scn = compare ? r[1] : null; setB.particles = [];
+      var noFlow = r[0].meta.flow === false || (compare && r[1].meta.flow === false);
+      $('noflow').style.display = noFlow ? 'block' : 'none';
+      setParticleCount();
+      hideProbe();
+      var la = r[0].meta.label, lb = compare ? r[1].meta.label : '';
+      $('tagA').textContent = la; $('tagB').textContent = lb;
+      $('tagA').style.display = compare ? 'block' : 'none';
+      $('tagB').style.display = compare ? 'block' : 'none';
+      updateSwipePos();
+      clearTrails();
+      renderMetrics();
+      redrawFill();
+      status('');
+      scheduleUrl();
+    }).catch(function (e) { fail(e.message || String(e)); });
+  }
+
+  // ---- canvases ----------------------------------------------------------
+  function resizeCanvas() {
+    var s = map.getSize(), dpr = window.devicePixelRatio || 1;
+    [canvas, fillCanvas].forEach(function (c) {
+      c.width = s.x * dpr; c.height = s.y * dpr;
+      c.style.width = s.x + 'px'; c.style.height = s.y + 'px';
+      c.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
+    });
+  }
+  function clearTrails() { var s = map.getSize(); ctx.clearRect(0, 0, s.x, s.y); }
+
+  function computeView() {
+    var b = manifest.bounds3857, W = manifest.width, H = manifest.height;
+    var tl = map.latLngToContainerPoint(mercToLatLng(b[0], b[3]));
+    var br = map.latLngToContainerPoint(mercToLatLng(b[2], b[1]));
+    var sx = (br.x - tl.x) / W, sy = (br.y - tl.y) / H;
+    var size = map.getSize();
+    var i0 = Math.max(0, Math.floor((0 - tl.x) / sx)), i1 = Math.min(W - 1, Math.ceil((size.x - tl.x) / sx));
+    var j0 = Math.max(0, Math.floor((0 - tl.y) / sy)), j1 = Math.min(H - 1, Math.ceil((size.y - tl.y) / sy));
+    viewRect = { tlx: tl.x, tly: tl.y, sx: sx, sy: sy, i0: i0, i1: i1, j0: j0, j1: j1, ok: i1 > i0 && j1 > j0 };
+    return viewRect;
+  }
+
+  function swipeX() { return Math.round(map.getSize().x * swipeFrac); }
+
+  // Shading under the particles. Also used for the saved picture.
+  function paintFill(c, w, h) {
+    c.clearRect(0, 0, w, h);
+    if (!setA.scn) return;
+    var vw = computeView();
+    if (!vw.ok) return;
+    var mode = $('fill').value;
+    var dx = vw.tlx, dy = vw.tly, dw = vw.sx * manifest.width, dh = vw.sy * manifest.height;
+    function drawLayer(getImg, alpha) {
+      c.globalAlpha = alpha;
+      c.imageSmoothingEnabled = true;
+      if (compare && setB.scn) {
+        var sw = swipeX();
+        c.save(); c.beginPath(); c.rect(0, 0, sw, h); c.clip(); c.drawImage(getImg(setA.scn), dx, dy, dw, dh); c.restore();
+        c.save(); c.beginPath(); c.rect(sw, 0, w - sw, h); c.clip(); c.drawImage(getImg(setB.scn), dx, dy, dw, dh); c.restore();
+      } else {
+        c.drawImage(getImg(setA.scn), dx, dy, dw, dh);
+      }
+      c.globalAlpha = 1;
+    }
+    if (mode !== 'none') drawLayer(function (s) { return fillFor(s, mode); }, +$('op').value);
+    if ($('hl').checked && critActive()) drawLayer(hlFor, 0.9);
+  }
+  function redrawFill() { if (!map) return; var s = map.getSize(); paintFill(fctx, s.x, s.y); }
+
+  // Numbers under the legend bar: start, middle and end of the scale for the current shading.
+  function legendLabels(mode) {
+    var u = manifest.units;
+    if (mode === 'depth') return { mid: (manifest.maxDepth * 0.25).toFixed(1), max: manifest.maxDepth.toFixed(1) + ' ' + u.length };
+    var vp = velParams();
+    var mid = vp.stretch ? vp.vmax * 0.25 : vp.vmax * 0.5;
+    return { mid: mid.toFixed(1), max: vp.vmax.toFixed(1) + ' ' + u.velocity + (vp.stretch ? ' (slow speeds stretched)' : '') };
+  }
+  function updateLegend() {
+    var mode = $('fill').value;
+    var show = mode !== 'none';
+    $('legend').style.display = show ? 'block' : 'none';
+    $('velopts').style.display = mode === 'velocity' ? 'block' : 'none';
+    if (!show) return;
+    $('legtitle').textContent = mode === 'depth' ? 'Water depth' : 'Velocity';
+    $('legbar').style.background = LEGEND_CSS[mode];
+    var L2 = legendLabels(mode);
+    $('legmid').textContent = mode === 'depth' ? '' : L2.mid;
+    $('legmax').textContent = L2.max;
+    $('vmaxv').textContent = velParams().vmax.toFixed(1) + ' ' + manifest.units.velocity;
+  }
+  function velScaleChanged() {
+    clearFills();
+    updateLegend(); redrawFill();
+  }
+
+  // ---- metrics -------------------------------------------------------------
+  function isUS() { return manifest.units.length === 'ft'; }
+  function pxAreaM2() {
+    var b = manifest.bounds3857, pxm = (b[2] - b[0]) / manifest.width;
+    var lat = mercToLatLng((b[0] + b[2]) / 2, (b[1] + b[3]) / 2).lat;
+    var ground = pxm * Math.cos(lat * Math.PI / 180);   // metres on the ground per raster pixel
+    return ground * ground;
+  }
+  // One pass over a scenario: wet cell count, depth sum, speed histogram. Kept on the scenario.
+  function metricsFor(scn) {
+    if (scn.metrics) return scn.metrics;
+    var W = manifest.width, H = manifest.height, d = scn.depth.data, f = scn.flow.data;
+    var hist = new Uint32Array(256), n = 0, sumD = 0, sumB = 0, maxDv = 0;
+    for (var i = 0, t = W * H; i < t; i++) {
+      var p = i * 4;
+      if (d[p + 3] === 0) continue;
+      n++;
+      var dv = d[p] * 256 + d[p + 1];
+      sumD += dv; if (dv > maxDv) maxDv = dv;
+      var bb = f[p + 2]; sumB += bb; hist[bb]++;
+    }
+    return (scn.metrics = { n: n, sumD: sumD, sumB: sumB, maxDv: maxDv, hist: hist });
+  }
+  function histPct(hist, n, q) {
+    var target = q * n, c = 0;
+    for (var b = 0; b < 256; b++) { c += hist[b]; if (c >= target) return b / 255 * manifest.maxSpeed; }
+    return manifest.maxSpeed;
+  }
+  function derive(scn) {
+    var m = metricsFor(scn), us = isUS();
+    var areaM2 = m.n * pxAreaM2();
+    var meanD = m.n ? m.sumD / 65535 * manifest.maxDepth / m.n : 0;
+    var toM = us ? 0.3048 : 1;
+    return {
+      n: m.n,
+      area: us ? areaM2 / 4046.8564224 : areaM2 / 10000,
+      vol: us ? meanD * toM * areaM2 / 1233.48183754752 : meanD * toM * areaM2,
+      meanD: meanD, maxD: m.maxDv / 65535 * manifest.maxDepth,
+      meanV: m.n ? m.sumB / 255 * manifest.maxSpeed / m.n : 0,
+      medV: histPct(m.hist, m.n, 0.5), p90V: histPct(m.hist, m.n, 0.9),
+      areaM2: areaM2
+    };
+  }
+  function fmtN(x) {
+    if (!isFinite(x)) return 'n/a';
+    var a = Math.abs(x), dec = a >= 1000 ? 0 : (a >= 10 ? 1 : 2);
+    return x.toLocaleString(undefined, { minimumFractionDigits: dec, maximumFractionDigits: dec });
+  }
+  function fmtS(x) { return (x > 0 ? '+' : (x < 0 ? '\u2212' : '')) + fmtN(Math.abs(x)); }
+  function pct(a, b) { return a > 0 ? (b - a) / a * 100 : NaN; }
+  function fmtPct(x) { return isFinite(x) ? (x > 0 ? '+' : (x < 0 ? '\u2212' : '')) + Math.abs(x).toFixed(Math.abs(x) >= 10 ? 0 : 1) + '%' : ''; }
+
+  function critValue(id) { var s = $(id).value.trim(); if (s === '') return null; var x = parseFloat(s); return isFinite(x) ? x : null; }
+  function crit() { return { dmin: critValue('cdmin'), dmax: critValue('cdmax'), vmin: critValue('cvmin'), vmax: critValue('cvmax') }; }
+  function critActive() { var c = crit(); return c.dmin !== null || c.dmax !== null || c.vmin !== null || c.vmax !== null; }
+  function critKey(c) { return [c.dmin, c.dmax, c.vmin, c.vmax].join('|'); }
+  function critRaw(c) {
+    return {
+      d0: c.dmin === null ? 0 : Math.ceil(c.dmin / manifest.maxDepth * 65535),
+      d1: c.dmax === null ? 65535 : Math.floor(c.dmax / manifest.maxDepth * 65535),
+      v0: c.vmin === null ? 0 : Math.ceil(c.vmin / manifest.maxSpeed * 255),
+      v1: c.vmax === null ? 255 : Math.floor(c.vmax / manifest.maxSpeed * 255)
+    };
+  }
+  function critText() {
+    var c = crit(), u = manifest.units, parts = [];
+    function one(name, lo, hi, unit) {
+      if (lo !== null && hi !== null) parts.push(name + ' ' + lo + ' to ' + hi + ' ' + unit);
+      else if (lo !== null) parts.push(name + ' at least ' + lo + ' ' + unit);
+      else if (hi !== null) parts.push(name + ' up to ' + hi + ' ' + unit);
+    }
+    one('depth', c.dmin, c.dmax, u.length); one('velocity', c.vmin, c.vmax, u.velocity);
+    return parts.join(', ');
+  }
+  function countCrit(scn, c) {
+    var key = critKey(c);
+    if (scn.crit && scn.crit.key === key) return scn.crit.n;
+    var r = critRaw(c), W = manifest.width, H = manifest.height, d = scn.depth.data, f = scn.flow.data, n = 0;
+    for (var i = 0, t = W * H; i < t; i++) {
+      var p = i * 4;
+      if (d[p + 3] === 0) continue;
+      var dv = d[p] * 256 + d[p + 1];
+      if (dv < r.d0 || dv > r.d1) continue;
+      var b = f[p + 2];
+      if (b < r.v0 || b > r.v1) continue;
+      n++;
+    }
+    scn.crit = { key: key, n: n };
+    return n;
+  }
+  // Orange cells where the criteria are met, built once per scenario and criteria
+  function hlFor(scn) {
+    var c = crit(), key = critKey(c);
+    if (scn.hl && scn.hl.key === key) return scn.hl.canvas;
+    var r = critRaw(c), W = manifest.width, H = manifest.height, d = scn.depth.data, f = scn.flow.data;
+    var cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    var x = cv.getContext('2d'), out = x.createImageData(W, H), o = out.data;
+    for (var i = 0, t = W * H; i < t; i++) {
+      var p = i * 4;
+      if (d[p + 3] === 0) continue;
+      var dv = d[p] * 256 + d[p + 1];
+      if (dv < r.d0 || dv > r.d1) continue;
+      var b = f[p + 2];
+      if (b < r.v0 || b > r.v1) continue;
+      o[p] = 255; o[p + 1] = 150; o[p + 2] = 30; o[p + 3] = 235;
+    }
+    x.putImageData(out, 0, 0);
+    scn.hl = { key: key, canvas: cv };
+    return cv;
+  }
+
+  function renderMetrics() {
+    if (!manifest || !setA.scn) return;
+    var us = isUS(), u = manifest.units;
+    var A = derive(setA.scn), B = (compare && setB.scn) ? derive(setB.scn) : null;
+    var rows = [
+      ['Wet area', 'area', us ? 'ac' : 'ha', true],
+      ['Water volume', 'vol', us ? 'ac ft' : 'm\u00b3', true],
+      ['Mean depth', 'meanD', u.length, false],
+      ['Max depth', 'maxD', u.length, false],
+      ['Mean velocity', 'meanV', u.velocity, false],
+      ['Median velocity', 'medV', u.velocity, false],
+      ['Fast water', 'p90V', u.velocity, false]
+    ];
+    var h = '<table class="mt"><tr><th></th>' + (B ? '<th>Left</th><th>Right</th><th>Change</th>' : '<th>' + (setA.scn.meta.label || '') + '</th>') + '</tr>';
+    rows.forEach(function (r) {
+      var k = r[1];
+      h += '<tr><td' + (k === 'p90V' ? ' title="Velocity that 90 percent of the wet area is below"' : '') + '>' + r[0] + ' <small style="display:inline;color:#7f93b0">' + r[2] + '</small></td>';
+      if (B) {
+        h += '<td>' + fmtN(A[k]) + '</td><td>' + fmtN(B[k]) + '</td><td>' + fmtS(B[k] - A[k]) + (r[3] ? '<small>' + fmtPct(pct(A[k], B[k])) + '</small>' : '') + '</td>';
+      } else h += '<td>' + fmtN(A[k]) + '</td>';
+      h += '</tr>';
+    });
+    h += '</table>';
+    $('metrics').innerHTML = h;
+    var cr = '', hs = 'off';
+    if (critActive()) {
+      var c = crit(), nA = countCrit(setA.scn, c), nB = B ? countCrit(setB.scn, c) : 0;
+      var area = function (n) { return n * pxAreaM2() / (us ? 4046.8564224 : 10000); };
+      var sh = function (n, tot) { return tot ? (n / tot * 100).toFixed(1) + '%' : 'n/a'; };
+      cr = '<table class="mt"><tr><th></th>' + (B ? '<th>Left</th><th>Right</th><th>Change</th>' : '<th></th>') + '</tr>';
+      cr += '<tr><td>Area <small style="display:inline;color:#7f93b0">' + (us ? 'ac' : 'ha') + '</small></td>';
+      if (B) cr += '<td>' + fmtN(area(nA)) + '</td><td>' + fmtN(area(nB)) + '</td><td>' + fmtS(area(nB) - area(nA)) + '<small>' + fmtPct(pct(nA, nB)) + '</small></td>';
+      else cr += '<td>' + fmtN(area(nA)) + '</td>';
+      cr += '</tr><tr><td>Share of wet area</td>';
+      if (B) cr += '<td>' + sh(nA, A.n) + '</td><td>' + sh(nB, B.n) + '</td><td></td>'; else cr += '<td>' + sh(nA, A.n) + '</td>';
+      cr += '</tr></table>';
+      hs = B ? 'Left ' + fmtN(area(nA)) + ', Right ' + fmtN(area(nB)) + (us ? ' ac' : ' ha') : fmtN(area(nA)) + (us ? ' ac' : ' ha') + ' meet it';
+    }
+    $('critres').innerHTML = cr;
+    $('habsum').textContent = hs;
+    $('metsum').textContent = B ? 'Left ' + fmtN(A.area) + (us ? ' ac' : ' ha') + ', Right ' + fmtN(B.area) + (us ? ' ac' : ' ha')
+                                : fmtN(A.area) + (us ? ' ac' : ' ha') + ', mean depth ' + fmtN(A.meanD) + ' ' + u.length;
+    $('critunits').textContent = u.length + ' for depth and ' + u.velocity + ' for velocity';
+  }
+  var critTimer = null;
+  function critChanged() {
+    clearTimeout(critTimer);
+    critTimer = setTimeout(function () {
+      renderMetrics();
+      if ($('hl').checked) redrawFill();
+      scheduleUrl();
+    }, 120);
+  }
+  function metricsSummary(scn) {
+    var d = derive(scn), us = isUS(), u = manifest.units;
+    return 'Wet area ' + fmtN(d.area) + (us ? ' ac' : ' ha') + ', mean depth ' + fmtN(d.meanD) + ' ' + u.length + ', mean velocity ' + fmtN(d.meanV) + ' ' + u.velocity;
+  }
+
+  // ---- shareable links ------------------------------------------------------
+  // The address always describes the current view, so copying it (or the Link button) shares exactly this.
+  var urlTimer = null;
+  function stateUrl() {
+    var q = new URLSearchParams();
+    q.set('site', siteId);
+    q.set('a', $('q').value);
+    if (compare) { q.set('c', '1'); q.set('b', $('qb').value); q.set('sw', swipeFrac.toFixed(2)); }
+    if ($('fill').value !== 'depth') q.set('f', $('fill').value);
+    if (!linesOn) q.set('l', '0');
+    var vr = velRange();
+    if (vr.active) { q.set('vlo', vr.lo.toFixed(2)); q.set('vhi', vr.hi.toFixed(2)); }
+    if (critActive()) {
+      var c = crit();
+      q.set('crit', [c.dmin, c.dmax, c.vmin, c.vmax].map(function (x) { return x === null ? '' : x; }).join(','));
+      if ($('hl').checked) q.set('hl', '1');
+    }
+    if (map) { var ct = map.getCenter(); q.set('ll', ct.lat.toFixed(5) + ',' + ct.lng.toFixed(5)); q.set('z', map.getZoom().toFixed(2)); }
+    return location.href.split('#')[0].split('?')[0] + '?' + q.toString().replace(/%2C/g, ',');
+  }
+  function scheduleUrl() {
+    clearTimeout(urlTimer);
+    urlTimer = setTimeout(function () { try { history.replaceState(null, '', stateUrl()); } catch (e) {} }, 400);
+  }
+  function copyLink() {
+    var url = stateUrl();
+    var done = function () { status('Link copied'); setTimeout(function () { status(''); }, 1800); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, function () { window.prompt('Copy this link', url); });
+    else window.prompt('Copy this link', url);
+  }
+
+  // ---- swipe bar ---------------------------------------------------------
+  function updateSwipePos() {
+    if (!map) return;
+    var x = swipeX(), w = map.getSize().x;
+    $('swipe').style.left = x + 'px';
+    // Scenario names sit just beside the bar, so neither hides behind the control panel
+    $('tagA').style.left = 'auto';
+    $('tagA').style.right = (w - x + 22) + 'px';
+    $('tagB').style.right = 'auto';
+    $('tagB').style.left = (x + 22) + 'px';
+  }
+  function setupSwipe() {
+    var el = $('swipe'), drag = false;
+    function move(e) {
+      if (!drag) return;
+      var r = $('map').getBoundingClientRect();
+      swipeFrac = Math.max(0.03, Math.min(0.97, (e.clientX - r.left) / r.width));
+      updateSwipePos(); clearTrails(); redrawFill();
+    }
+    el.addEventListener('pointerdown', function (e) { drag = true; el.setPointerCapture(e.pointerId); e.preventDefault(); });
+    el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', function () { drag = false; scheduleUrl(); });
+    el.addEventListener('pointercancel', function () { drag = false; });
+  }
+
+  // ---- particles ---------------------------------------------------------
+  function spawn(p, scn) {
+    var v = viewRect, W = manifest.width, f = scn.flow.data;
+    if (!v || !v.ok) { p.life = 0; return; }
+    for (var t = 0; t < 12; t++) {
+      var i = v.i0 + Math.random() * (v.i1 - v.i0), j = v.j0 + Math.random() * (v.j1 - v.j0);
+      if (f[((j | 0) * W + (i | 0)) * 4 + 3] > 0) {
+        p.i = i; p.j = j; p.pi = i; p.pj = j; p.life = 50 + Math.random() * 80; return;
+      }
+    }
+    p.life = 0;
+  }
+  // Line density stays the same per screen area: the particle count follows how much water is on screen.
+  var DENS_K = 0.016, frameNo = 0;
+  function visibleWetArea(scn, vw) {
+    var W = manifest.width, H = manifest.height, f = scn.flow.data, N = 18, wet = 0;
+    for (var a = 0; a < N; a++) {
+      for (var b = 0; b < N; b++) {
+        var i = Math.min(W - 1, Math.floor(vw.i0 + (vw.i1 - vw.i0) * (a + 0.5) / N));
+        var j = Math.min(H - 1, Math.floor(vw.j0 + (vw.j1 - vw.j0) * (b + 0.5) / N));
+        if (f[(j * W + i) * 4 + 3] > 0) wet++;
+      }
+    }
+    return (vw.i1 - vw.i0) * Math.abs(vw.sx) * (vw.j1 - vw.j0) * Math.abs(vw.sy) * wet / (N * N);
+  }
+  function setParticleCount() {
+    if (!manifest || !map) return;
+    var vw = computeView(), dens = +$('dens').value;
+    var cap = (compare ? 14000 : 22000) * (window.innerWidth < 700 ? 0.5 : 1);
+    [setA, setB].forEach(function (set) {
+      var want = 0;
+      if (set.scn && vw.ok) want = Math.max(300, Math.min(cap, Math.round(dens * DENS_K * visibleWetArea(set.scn, vw))));
+      while (set.particles.length < want) set.particles.push({ i: 0, j: 0, pi: 0, pj: 0, life: 0 });
+      if (set.particles.length > want) set.particles.length = want;
+    });
+  }
+
+  var ramp = [];
+  (function () {
+    for (var k = 0; k < 32; k++) {
+      var t = k / 31;
+      ramp.push('rgba(' + Math.round(170 + 85 * t) + ',' + Math.round(235 + 20 * t) + ',255,' + (0.45 + 0.5 * t).toFixed(2) + ')');
+    }
+  })();
+
+  function stepSet(c, set, v, speedK, perPx) {
+    var vr = velRange(), minS = vr.lo, maxS = vr.hi, minC = manifest.confidence ? +$('minconf').value : 0, dd = set.scn.depth.data;
+    var W = manifest.width, H = manifest.height, f = set.scn.flow.data, buckets = {};
+    var parts = set.particles;
+    if (set.scn.meta.flow === false) return;
+    for (var n = 0; n < parts.length; n++) {
+      var p = parts[n];
+      if (p.life <= 0) { spawn(p, set.scn); if (p.life <= 0) continue; }
+      var ii = p.i | 0, jj = p.j | 0;
+      if (ii < 0 || jj < 0 || ii >= W || jj >= H) { p.life = 0; continue; }
+      var idx = (jj * W + ii) * 4;
+      if (f[idx + 3] === 0) { p.life = 0; continue; }
+      var ux = f[idx] / 255 * 2 - 1, uy = f[idx + 1] / 255 * 2 - 1, s = f[idx + 2] / 255;
+      if (s < minS || (maxS < 1 && s > maxS)) { p.life = 0; continue; }
+      if (minC > 0 && dd[idx + 2] / 255 < minC) { p.life = 0; continue; }
+      var step = speedK * (0.25 + 2.2 * Math.sqrt(s)) / perPx;
+      p.pi = p.i; p.pj = p.j;
+      p.i += ux * step; p.j += uy * step;
+      p.life--;
+      var cc = Math.min(31, (s * 31) | 0);
+      (buckets[cc] || (buckets[cc] = [])).push(p);
+    }
+    for (var key in buckets) {
+      c.strokeStyle = ramp[key];
+      c.beginPath();
+      var arr = buckets[key];
+      for (var q = 0; q < arr.length; q++) {
+        var a = arr[q];
+        c.moveTo(v.tlx + a.pi * v.sx, v.tly + a.pj * v.sy);
+        c.lineTo(v.tlx + a.i * v.sx, v.tly + a.j * v.sy);
+      }
+      c.stroke();
+    }
+  }
+
+  function frame() {
+    requestAnimationFrame(frame);
+    if (!setA.scn || !manifest || paused || !linesOn) return;
+    var size = map.getSize();
+    ctx.globalCompositeOperation = 'destination-in';
+    ctx.fillStyle = 'rgba(0,0,0,' + $('trail').value + ')';
+    ctx.fillRect(0, 0, size.x, size.y);
+    ctx.globalCompositeOperation = 'source-over';
+    var v = computeView();
+    if (!v.ok) return;
+    if (++frameNo % 8 === 0) setParticleCount();
+    var speedK = +$('spd').value, perPx = (Math.abs(v.sx) + Math.abs(v.sy)) / 2;
+    ctx.lineWidth = 1.4; ctx.lineCap = 'round';
+    if (compare && setB.scn) {
+      var sw = swipeX();
+      ctx.save(); ctx.beginPath(); ctx.rect(0, 0, sw, size.y); ctx.clip(); stepSet(ctx, setA, v, speedK, perPx); ctx.restore();
+      ctx.save(); ctx.beginPath(); ctx.rect(sw, 0, size.x - sw, size.y); ctx.clip(); stepSet(ctx, setB, v, speedK, perPx); ctx.restore();
+    } else {
+      stepSet(ctx, setA, v, speedK, perPx);
+    }
+  }
+
+  // ---- click readout -----------------------------------------------------
+  function describe(scn, idx) {
+    if (scn.depth.data[idx + 3] === 0) return 'Dry';
+    var d = (scn.depth.data[idx] * 256 + scn.depth.data[idx + 1]) / 65535 * manifest.maxDepth;
+    var v = scn.flow.data[idx + 2] / 255 * manifest.maxSpeed;
+    return 'Depth ' + d.toFixed(2) + ' ' + manifest.units.length + ', velocity ' + v.toFixed(2) + ' ' + manifest.units.velocity;
+  }
+  // Readout box. It lives outside the map so the flow animation cannot draw over it.
+  var probeLL = null;
+  function placeProbe() {
+    if (!probeLL || !map) return;
+    var pt = map.latLngToContainerPoint(probeLL), el = $('probe'), size = map.getSize();
+    var half = el.offsetWidth / 2 + 8;
+    el.style.left = Math.max(half, Math.min(size.x - half, pt.x)) + 'px';
+    el.style.top = Math.max(el.offsetHeight + 20, pt.y) + 'px';
+    $('probedot').style.left = pt.x + 'px'; $('probedot').style.top = pt.y + 'px';
+  }
+  function hideProbe() { probeLL = null; $('probe').style.display = 'none'; $('probedot').style.display = 'none'; }
+  function showProbe(ll, html) {
+    probeLL = ll;
+    var el = $('probe');
+    el.innerHTML = '<button class="x" type="button" aria-label="Close">&times;</button>' + html;
+    el.style.display = 'block'; $('probedot').style.display = 'block';
+    el.querySelector('.x').addEventListener('click', hideProbe);
+    placeProbe();
+  }
+  function onMapClick(e) {
+    if (!setA.scn) return;
+    var R = 6378137, b = manifest.bounds3857;
+    var x = e.latlng.lng * Math.PI / 180 * R;
+    var y = Math.log(Math.tan(Math.PI / 4 + e.latlng.lat * Math.PI / 360)) * R;
+    var i = Math.floor((x - b[0]) / (b[2] - b[0]) * manifest.width);
+    var j = Math.floor((b[3] - y) / (b[3] - b[1]) * manifest.height);
+    if (i < 0 || j < 0 || i >= manifest.width || j >= manifest.height) return;
+    var idx = (j * manifest.width + i) * 4, html;
+    if (compare && setB.scn) {
+      html = '<b>' + setA.scn.meta.label + '</b><br>' + describe(setA.scn, idx) +
+             '<br><b>' + setB.scn.meta.label + '</b><br>' + describe(setB.scn, idx);
+    } else {
+      html = '<b>' + setA.scn.meta.label + '</b><br>' + describe(setA.scn, idx);
+    }
+    showProbe(e.latlng, html);
+  }
+
+  // ---- save picture ------------------------------------------------------
+  function tileUrl(tpl, z, x, y) {
+    return tpl.replace('{z}', z).replace('{x}', x).replace('{y}', y).replace('{s}', 'a');
+  }
+  // Draws the basemap tiles that are on screen. Resolves with how many tiles drew.
+  function drawBasemap(c, size) {
+    var tpl = manifest.basemap.url, maxNative = manifest.basemap.maxNativeZoom || 19;
+    var z = Math.min(Math.round(map.getZoom()), maxNative);
+    var scale = map.getZoomScale(map.getZoom(), z);
+    var p0 = map.project(map.containerPointToLatLng([0, 0]), z);
+    var p1 = map.project(map.containerPointToLatLng([size.x, size.y]), z);
+    var x0 = Math.floor(p0.x / 256), x1 = Math.floor(p1.x / 256), y0 = Math.floor(p0.y / 256), y1 = Math.floor(p1.y / 256);
+    var jobs = [], n = Math.pow(2, z);
+    for (var tx = x0; tx <= x1; tx++) {
+      for (var ty = y0; ty <= y1; ty++) {
+        if (ty < 0 || ty >= n) continue;
+        (function (tx, ty) {
+          jobs.push(new Promise(function (resolve) {
+            var im = new Image();
+            im.crossOrigin = 'anonymous';
+            var done = false;
+            var finish = function (ok) { if (done) return; done = true; resolve(ok ? { im: im, tx: tx, ty: ty } : null); };
+            im.onload = function () { finish(true); };
+            im.onerror = function () { finish(false); };
+            setTimeout(function () { finish(false); }, 10000);
+            im.src = tileUrl(tpl, z, ((tx % n) + n) % n, ty);
+          }));
+        })(tx, ty);
+      }
+    }
+    return Promise.all(jobs).then(function (res) {
+      var drawn = 0;
+      res.forEach(function (r) {
+        if (!r) return;
+        c.drawImage(r.im, (r.tx * 256 - p0.x) * scale, (r.ty * 256 - p0.y) * scale, 256 * scale + 0.5, 256 * scale + 0.5);
+        drawn++;
+      });
+      return drawn;
+    });
+  }
+
+  function roundRect(c, x, y, w, h, r) {
+    c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r);
+    c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath();
+  }
+
+  function composePicture(withBasemap) {
+    var size = map.getSize(), ratio = window.devicePixelRatio || 1;
+    var out = document.createElement('canvas');
+    out.width = size.x * ratio; out.height = size.y * ratio;
+    var c = out.getContext('2d');
+    c.scale(ratio, ratio);
+    c.fillStyle = '#0e1b33'; c.fillRect(0, 0, size.x, size.y);
+    return (withBasemap ? drawBasemap(c, size) : Promise.resolve(0)).then(function (drawn) {
+      var dv = +$('dimbase').value;
+      if (drawn && dv > 0) { c.fillStyle = 'rgba(0,0,0,' + dv + ')'; c.fillRect(0, 0, size.x, size.y); }
+      var f = document.createElement('canvas');
+      f.width = out.width; f.height = out.height;
+      var fc = f.getContext('2d');
+      fc.scale(ratio, ratio);
+      paintFill(fc, size.x, size.y);
+      c.drawImage(f, 0, 0, size.x, size.y);
+      c.drawImage(canvas, 0, 0, size.x, size.y);
+      decorate(c, size);
+      return { canvas: out, drawn: drawn };
+    });
+  }
+
+  function decorate(c, size) {
+    var cmpOn = compare && setB.scn;
+    if (cmpOn) {
+      var sw = swipeX();
+      c.fillStyle = '#fff'; c.fillRect(sw - 1.5, 0, 3, size.y);
+    }
+    c.font = '600 14px -apple-system, Segoe UI, Roboto, sans-serif';
+    c.textBaseline = 'middle';
+    function chip(text, x, y, align) {
+      var w = c.measureText(text).width + 20;
+      var left = align === 'right' ? x - w : x;
+      c.fillStyle = 'rgba(14,27,51,0.88)'; roundRect(c, left, y, w, 28, 6); c.fill();
+      c.fillStyle = '#fff'; c.textAlign = 'left'; c.fillText(text, left + 10, y + 14.5);
+    }
+    chip(manifest.title, 12, 12, 'left');
+    if (cmpOn) {
+      chip(setA.scn.meta.label, 12, 46, 'left');
+      chip(setB.scn.meta.label, size.x - 12, 46, 'right');
+    } else {
+      chip(setA.scn.meta.label + (setA.scn.meta.value ? ' (' + setA.scn.meta.value + ')' : ''), 12, 46, 'left');
+    }
+    var yy = 80;
+    if (velRange().active) {
+      var vr2 = velRange();
+      chip('Velocities shown: ' + (vr2.lo * manifest.maxSpeed).toFixed(1) + ' to ' + (vr2.hi >= 1 ? 'max' : (vr2.hi * manifest.maxSpeed).toFixed(1)) + ' ' + manifest.units.velocity, 12, yy, 'left');
+      yy += 34;
+    }
+    if ($('mpic').checked) {
+      if (cmpOn) {
+        chip(setA.scn.meta.label + ': ' + metricsSummary(setA.scn), 12, yy, 'left'); yy += 34;
+        chip(setB.scn.meta.label + ': ' + metricsSummary(setB.scn), 12, yy, 'left'); yy += 34;
+      } else { chip(metricsSummary(setA.scn), 12, yy, 'left'); yy += 34; }
+    }
+    if ($('hl').checked && critActive()) { chip('Orange cells: ' + critText(), 12, yy, 'left'); yy += 34; }
+    var mode = $('fill').value;
+    if (mode !== 'none') {
+      var lw = 190, lx = 12, ly = size.y - 84;
+      c.fillStyle = 'rgba(14,27,51,0.88)'; roundRect(c, lx, ly, lw + 20, 72, 6); c.fill();
+      var g = c.createLinearGradient(lx + 10, 0, lx + 10 + lw, 0);
+      LEGEND_STOPS[mode].forEach(function (s) { g.addColorStop(s[0], s[1]); });
+      c.fillStyle = g; c.fillRect(lx + 10, ly + 22, lw, 10);
+      c.fillStyle = '#e8eef7'; c.font = '12px -apple-system, Segoe UI, Roboto, sans-serif'; c.textAlign = 'left';
+      c.fillText(mode === 'depth' ? 'Water depth' : 'Velocity', lx + 10, ly + 12);
+      c.fillText('0', lx + 10, ly + 42);
+      var ll = legendLabels(mode);
+      if (mode === 'velocity') { c.textAlign = 'center'; c.fillText(ll.mid, lx + 10 + lw / 2, ly + 42); }
+      c.textAlign = 'right';
+      c.fillText(ll.max.replace(' (slow speeds stretched)', ''), lx + 10 + lw, ly + 42);
+      if (mode === 'velocity' && velParams().stretch) { c.textAlign = 'left'; c.fillText('slow speeds stretched', lx + 10, ly + 62); }
+    }
+    c.font = '11px -apple-system, Segoe UI, Roboto, sans-serif';
+    c.textAlign = 'right'; c.textBaseline = 'alphabetic';
+    var attr = (manifest.basemap.attribution || '') + (manifest.basemap.attribution ? ' | ' : '') + 'Flow lines show relative direction and speed only';
+    var tw = c.measureText(attr).width + 12;
+    c.fillStyle = 'rgba(14,27,51,0.7)'; c.fillRect(size.x - tw, size.y - 18, tw, 18);
+    c.fillStyle = '#cfd9ea'; c.fillText(attr, size.x - 6, size.y - 5);
+  }
+
+  function download(blob, name) {
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+  }
+
+  function exportPng() {
+    if (!setA.scn) return;
+    status('Preparing picture...');
+    var name = siteId + '_' + setA.scn.id + (compare && setB.scn ? '_vs_' + setB.scn.id : '') + '.png';
+    composePicture(true).then(function (r) {
+      return new Promise(function (resolve) {
+        try {
+          r.canvas.toBlob(function (b) { resolve({ blob: b, note: r.drawn ? '' : 'The background imagery could not be included.' }); }, 'image/png');
+        } catch (err) { resolve({ blob: null }); }
+      });
+    }).then(function (res) {
+      if (res.blob) { download(res.blob, name); status(res.note || 'Saved ' + name); setTimeout(function () { status(''); }, res.note ? 5000 : 2500); return; }
+      // The imagery server does not allow its tiles to be copied. Save without the basemap.
+      return composePicture(false).then(function (r2) {
+        r2.canvas.toBlob(function (b) {
+          if (b) { download(b, name); status('Saved without background imagery (its server blocks copying)'); setTimeout(function () { status(''); }, 6000); }
+          else fail('Could not save the picture.');
+        }, 'image/png');
+      });
+    }).catch(function () { fail('Could not save the picture.'); });
+  }
+})();
+</script>
+</body>
+</html>

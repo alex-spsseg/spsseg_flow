@@ -1,0 +1,120 @@
+{
+ "site": "greenwater_test",
+ "title": "greenwater test",
+ "width": 1646,
+ "height": 2048,
+ "bounds3857": [
+  -13537887.203686647,
+  5961350.86291098,
+  -13534911.395012265,
+  5965053.448673517
+ ],
+ "bounds4326": [
+  [
+   47.11796866051812,
+   -121.61290989757805
+  ],
+  [
+   47.1405975889621,
+   -121.58617775342991
+  ]
+ ],
+ "maxDepth": 11.685798645019531,
+ "maxSpeed": 11.974763870239258,
+ "confidence": true,
+ "units": {
+  "length": "ft",
+  "velocity": "ft/s"
+ },
+ "discharges": [
+  {
+   "id": "Q10_ec",
+   "name": "Q10_ec",
+   "label": "Q10 (Existing Conditions)",
+   "value": "~4000ish",
+   "flow": true
+  },
+  {
+   "id": "Q2_ec",
+   "name": "Q2_ec",
+   "label": "Q2 (Existing Conditions)",
+   "value": "~900ish?",
+   "flow": true
+  },
+  {
+   "id": "Q100_ec",
+   "name": "Q100_ec",
+   "label": "Q100 (Existing Conditions)",
+   "value": "",
+   "flow": true
+  },
+  {
+   "id": "Q2_PC_base",
+   "name": "Q2_PC_base",
+   "label": "Q2 PC base",
+   "value": "",
+   "flow": true
+  },
+  {
+   "id": "Q2_PC_FG",
+   "name": "Q2_PC_FG",
+   "label": "Q2 PC FG",
+   "value": "",
+   "flow": true
+  },
+  {
+   "id": "Q2_PC_logs",
+   "name": "Q2_PC_logs",
+   "label": "Q2 PC logs",
+   "value": "",
+   "flow": true
+  },
+  {
+   "id": "Q10_PC_base",
+   "name": "Q10_PC_base",
+   "label": "Q10 PC base",
+   "value": "",
+   "flow": true
+  },
+  {
+   "id": "Q10_PC_FG",
+   "name": "Q10_PC_FG",
+   "label": "Q10 PC FG",
+   "value": "",
+   "flow": true
+  },
+  {
+   "id": "Q10_PC_logs",
+   "name": "Q10_PC_logs",
+   "label": "Q10 PC logs",
+   "value": "",
+   "flow": true
+  },
+  {
+   "id": "Q100_PC_base",
+   "name": "Q100_PC_base",
+   "label": "Q100 PC base",
+   "value": "",
+   "flow": true
+  },
+  {
+   "id": "Q100_PC_FG",
+   "name": "Q100_PC_FG",
+   "label": "Q100 PC FG",
+   "value": "",
+   "flow": true
+  },
+  {
+   "id": "Q100_PC_logs",
+   "name": "Q100_PC_logs",
+   "label": "Q100 PC logs",
+   "value": "",
+   "flow": true
+  }
+ ],
+ "basemap": {
+  "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+  "attribution": "Esri, Maxar, Earthstar Geographics",
+  "maxNativeZoom": 19
+ }
+}
