@@ -583,8 +583,11 @@
   function itemFor(flow, scen) {
     return grid.items.filter(function (it) { return it.flow === flow && it.scen === scen; })[0] || null;
   }
+  // EC, PC and FG are spelled out for readers: existing conditions, proposed conditions, final grade.
+  var SCEN_WORDS = { ec: 'Existing', pc: 'Proposed', fg: 'final grade' };
   function scenText(s) {
-    return s ? s.replace(/_/g, ' ').split(' ').map(function (w) { return w.length <= 2 ? w.toUpperCase() : w; }).join(' ') : 'All';
+    var t = s ? s.replace(/_/g, ' ').split(' ').map(function (w) { return SCEN_WORDS[w.toLowerCase()] || (w.length <= 2 ? w.toUpperCase() : w); }).join(' ') : 'All';
+    return t.charAt(0).toUpperCase() + t.slice(1);
   }
   function fillFlowOptions(sel) {
     sel.innerHTML = '';
