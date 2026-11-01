@@ -118,6 +118,8 @@
   #probe .x:hover { color: #fff; }
   #probedot { position: absolute; z-index: 1049; display: none; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%;
     border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.6); pointer-events: none; }
+  .leaflet-tooltip.pin-tip { background: rgba(14,27,51,0.92); color: #fff; border: 1px solid #ff9f1c; font-weight: 600; font-size: 12px; }
+  .leaflet-tooltip-top.pin-tip::before { border-top-color: #ff9f1c; }
   .leaflet-popup-content-wrapper { background: #132447; color: #e8eef7; border: 1px solid #1b3f95; }
   .leaflet-popup-tip { background: #132447; }
   @media (max-width: 700px) { #panel { width: 250px; } }
@@ -161,6 +163,10 @@
         <option value="velocity">Velocity</option>
         <option value="none">None (flow lines only)</option>
       </select>
+      <div id="rampwrap" style="display:none">
+        <label for="ramp" id="ramplabel">Color scheme</label>
+        <select id="ramp"></select>
+      </div>
       <label class="check"><input type="checkbox" id="showlines" checked> Show flow animation</label>
       <div id="noflow" style="display:none; margin-top:6px; font-size:11px; color:#f2b36b;">No flow direction for this scenario, so it shows shading only.</div>
     </div>
@@ -267,6 +273,7 @@
   var compare = false, swipeFrac = 0.5;
   var setA = { particles: [], scn: null }, setB = { particles: [], scn: null };
   var paused = false, linesOn = true, selToken = 0;
+  var pinSpec = null, pinName = '';   // a marker named in the link, such as the stop a 360 tour opened this from
   var canvas = $('flow-canvas'), ctx = canvas.getContext('2d');
   var fillCanvas = $('fill-canvas'), fctx = fillCanvas.getContext('2d');
   var viewRect = null;
@@ -275,7 +282,62 @@
   function fail(msg) { var e = $('err'); e.style.display = 'block'; e.textContent = msg; status(''); }
 
   // ---- colour ramps ------------------------------------------------------
-  var VEL_STOPS = [[0, [68, 1, 84]], [0.25, [59, 82, 139]], [0.5, [33, 145, 140]], [0.75, [94, 201, 98]], [1, [253, 231, 37]]];
+  // ---- colour schemes -----------------------------------------------------------------------------------
+  // Each scheme is a list of stops: [position 0 to 1, [red, green, blue, alpha]]. Depth positions follow the square
+  // root of depth (shallow water gets more of the colours); velocity positions are linear. Add a scheme by adding a line.
+  var RAMP_DEFS = {
+    depth: [
+      { id: 'blues2', label: 'Blues, strong', stops: [[0, [120, 225, 255, 235]], [0.35, [40, 150, 250, 240]], [0.7, [10, 70, 200, 245]], [1, [10, 20, 110, 250]]] },
+      { id: 'blues', label: 'Blues, soft', stops: [[0, [150, 225, 240, 150]], [0.5, [30, 120, 220, 210]], [1, [10, 40, 150, 250]]] },
+      { id: 'rainbow', label: 'Rainbow (RAS Mapper style)', stops: [[0, [40, 60, 255, 235]], [0.2, [0, 180, 255, 235]], [0.4, [0, 215, 130, 235]], [0.6, [225, 235, 40, 235]], [0.8, [255, 150, 20, 235]], [1, [215, 20, 20, 240]]] },
+      { id: 'viridisr', label: 'Viridis, bright shallow', stops: [[0, [253, 231, 37, 235]], [0.25, [94, 201, 98, 235]], [0.5, [33, 145, 140, 235]], [0.75, [59, 82, 139, 240]], [1, [68, 1, 84, 245]]] },
+      { id: 'ylorrd', label: 'Yellow to red', stops: [[0, [255, 237, 160, 235]], [0.25, [254, 178, 76, 235]], [0.5, [253, 141, 60, 238]], [0.75, [227, 26, 28, 240]], [1, [128, 0, 38, 245]]] }
+    ],
+    velocity: [
+      { id: 'viridis', label: 'Viridis', stops: [[0, [68, 1, 84, 225]], [0.25, [59, 82, 139, 225]], [0.5, [33, 145, 140, 225]], [0.75, [94, 201, 98, 225]], [1, [253, 231, 37, 225]]] },
+      { id: 'rainbow', label: 'Rainbow (RAS Mapper style)', stops: [[0, [40, 60, 255, 230]], [0.2, [0, 180, 255, 230]], [0.4, [0, 215, 130, 230]], [0.6, [225, 235, 40, 230]], [0.8, [255, 150, 20, 230]], [1, [215, 20, 20, 235]]] },
+      { id: 'plasma', label: 'Plasma', stops: [[0, [13, 8, 135, 225]], [0.25, [126, 3, 168, 225]], [0.5, [204, 71, 120, 225]], [0.75, [248, 149, 64, 225]], [1, [240, 249, 33, 225]]] },
+      { id: 'ylorrd', label: 'Yellow to red', stops: [[0, [255, 237, 160, 225]], [0.25, [254, 178, 76, 230]], [0.5, [253, 141, 60, 232]], [0.75, [227, 26, 28, 235]], [1, [128, 0, 38, 240]]] },
+      { id: 'coolwarm', label: 'Cool to warm', stops: [[0, [59, 76, 192, 225]], [0.25, [141, 176, 254, 225]], [0.5, [221, 221, 221, 225]], [0.75, [244, 154, 123, 230]], [1, [180, 4, 38, 235]]] }
+    ]
+  };
+  var RAMP_DEFAULT = { depth: 'blues2', velocity: 'viridis' };
+  function rampValid(mode, id) {
+    var l = RAMP_DEFS[mode];
+    for (var i = 0; i < l.length; i++) if (l[i].id === id) return id;
+    return RAMP_DEFAULT[mode];
+  }
+  function rampFind(mode, id) {
+    var l = RAMP_DEFS[mode];
+    for (var i = 0; i < l.length; i++) if (l[i].id === id) return l[i];
+    return l[0];
+  }
+  function rampColor(stops, t, out) {
+    t = Math.max(0, Math.min(1, t));
+    for (var k = 1; k < stops.length; k++) {
+      if (t <= stops[k][0]) {
+        var a = stops[k - 1], b = stops[k], f = (t - a[0]) / (b[0] - a[0]);
+        for (var c = 0; c < 4; c++) out[c] = a[1][c] + (b[1][c] - a[1][c]) * f;
+        return;
+      }
+    }
+    var last = stops[stops.length - 1][1];
+    for (var c2 = 0; c2 < 4; c2++) out[c2] = last[c2];
+  }
+  // legend colours sampled along the scale: [[position, 'rgba(...)'], ...]
+  function rampStops(mode, id) {
+    var r = rampFind(mode, id), out = [0, 0, 0, 0], res = [];
+    for (var i = 0; i <= 12; i++) {
+      var p = i / 12;
+      rampColor(r.stops, mode === 'depth' ? Math.sqrt(p) : p, out);
+      res.push([p, 'rgba(' + Math.round(out[0]) + ',' + Math.round(out[1]) + ',' + Math.round(out[2]) + ',' + (out[3] / 255).toFixed(2) + ')']);
+    }
+    return res;
+  }
+  function rampCss(mode, id) {
+    return 'linear-gradient(90deg, ' + rampStops(mode, id).map(function (s) { return s[1] + ' ' + Math.round(s[0] * 100) + '%'; }).join(', ') + ')';
+  }
+  var rampSel = { depth: RAMP_DEFAULT.depth, velocity: RAMP_DEFAULT.velocity };
   function velRange() {
     var lo = +$('vlo').value, hi = +$('vhi').value;
     return { lo: lo, hi: hi, active: lo > 0 || hi < 1 };
@@ -285,29 +347,10 @@
     var frac = (+$('vmax').value || 100) / 100;
     return { vmax: manifest.maxSpeed * frac, stretch: $('stretch').checked };
   }
-  function velColor(t, out) {
-    t = Math.max(0, Math.min(1, t));
-    for (var k = 1; k < VEL_STOPS.length; k++) {
-      if (t <= VEL_STOPS[k][0]) {
-        var a = VEL_STOPS[k - 1], b = VEL_STOPS[k], f = (t - a[0]) / (b[0] - a[0]);
-        out[0] = a[1][0] + (b[1][0] - a[1][0]) * f; out[1] = a[1][1] + (b[1][1] - a[1][1]) * f;
-        out[2] = a[1][2] + (b[1][2] - a[1][2]) * f; out[3] = 225; return;
-      }
-    }
-  }
-  function depthColor(t, out) {
-    var s = Math.sqrt(Math.max(0, Math.min(1, t)));
-    if (s < 0.5) { var k = s / 0.5; out[0] = 150 - 120 * k; out[1] = 225 - 105 * k; out[2] = 240 - 20 * k; out[3] = 150 + 60 * k; }
-    else { var k2 = (s - 0.5) / 0.5; out[0] = 30 - 20 * k2; out[1] = 120 - 80 * k2; out[2] = 220 - 70 * k2; out[3] = 210 + 40 * k2; }
-  }
-  var LEGEND_CSS = {
-    depth: 'linear-gradient(90deg, rgba(150,225,240,0.6) 0%, rgba(30,120,220,0.82) 25%, rgba(10,40,150,0.98) 100%)',
-    velocity: 'linear-gradient(90deg, rgb(68,1,84), rgb(59,82,139) 25%, rgb(33,145,140) 50%, rgb(94,201,98) 75%, rgb(253,231,37))'
-  };
-  var LEGEND_STOPS = {
-    depth: [[0, 'rgba(150,225,240,0.6)'], [0.25, 'rgba(30,120,220,0.82)'], [1, 'rgba(10,40,150,0.98)']],
-    velocity: [[0, 'rgb(68,1,84)'], [0.25, 'rgb(59,82,139)'], [0.5, 'rgb(33,145,140)'], [0.75, 'rgb(94,201,98)'], [1, 'rgb(253,231,37)']]
-  };
+  function velColor(t, out) { rampColor(rampFind('velocity', rampSel.velocity).stops, t, out); }
+  function depthColor(t, out) { rampColor(rampFind('depth', rampSel.depth).stops, Math.sqrt(Math.max(0, Math.min(1, t))), out); }
+  function legendCss(mode) { return rampCss(mode, rampSel[mode]); }
+  function legendStops(mode) { return rampStops(mode, rampSel[mode]); }
 
   fetch(base + 'manifest.json', { cache: 'no-store' })
     .then(function (r) { if (!r.ok) throw new Error('Site "' + siteId + '" was not found.'); return r.json(); })
@@ -387,6 +430,12 @@
       }
     });
     $('fill').addEventListener('change', function () { syncFillSeg(); updateLegend(); redrawFill(); scheduleUrl(); });
+    $('ramp').addEventListener('change', function () {
+      var m = $('fill').value;
+      if (m === 'none') return;
+      rampSel[m] = $('ramp').value;
+      clearFills(); updateLegend(); redrawFill(); scheduleUrl();
+    });
     syncFillSeg();
     $('dens').addEventListener('input', setParticleCount);
     $('dens').addEventListener('input', function () { $('densv').textContent = (+$('dens').value).toFixed(2).replace(/0$/, '') + 'x'; });
@@ -452,6 +501,8 @@
     // Opens the view described by the address, if it names one
     function applyDeepLink() {
       var P = new URLSearchParams(location.search);
+      rampSel.depth = rampValid('depth', P.get('rd') || RAMP_DEFAULT.depth);
+      rampSel.velocity = rampValid('velocity', P.get('rv') || RAMP_DEFAULT.velocity);
       var ids = manifest.discharges.map(function (d) { return d.id; });
       var a = P.get('a'), b = P.get('b'), c = P.get('c') === '1';
       if (ids.indexOf(a) >= 0) {
@@ -484,10 +535,18 @@
       if (c && ids.length > 1) { $('cmp').checked = true; $('cmp').dispatchEvent(new Event('change')); }
       var sw = parseFloat(P.get('sw'));
       if (isFinite(sw)) { swipeFrac = Math.max(0.03, Math.min(0.97, sw)); updateSwipePos(); }
+      var pin = (P.get('pin') || '').split(',');
+      if (pin.length === 2 && isFinite(parseFloat(pin[0])) && isFinite(parseFloat(pin[1]))) {
+        pinSpec = parseFloat(pin[0]).toFixed(5) + ',' + parseFloat(pin[1]).toFixed(5);
+        pinName = (P.get('pn') || '').slice(0, 80);
+        L.circleMarker([parseFloat(pin[0]), parseFloat(pin[1])], { radius: 7, color: '#ffffff', weight: 3, fillColor: '#ff9f1c', fillOpacity: 1 })
+          .addTo(map).bindTooltip(pinName || 'Your stop', { permanent: true, direction: 'top', offset: [0, -8], className: 'pin-tip', opacity: 1 });
+      }
       var ll = (P.get('ll') || '').split(','), z = parseFloat(P.get('z'));
       if (ll.length === 2 && isFinite(parseFloat(ll[0])) && isFinite(parseFloat(ll[1]))) map.setView([parseFloat(ll[0]), parseFloat(ll[1])], isFinite(z) ? z : map.getZoom());
     }
     applyDeepLink();
+    updateLegend();
     applySelection();
     requestAnimationFrame(frame);
   }
@@ -624,7 +683,7 @@
   // Colour raster for one scenario and one shading mode, built once and kept.
   function fillFor(scn, mode) {
     var vr = velRange(), dim = $('vshade') && $('vshade').checked && vr.active;
-    var key = mode + (dim ? '|' + vr.lo + '-' + vr.hi : '');
+    var key = mode + ':' + rampSel[mode] + (dim ? '|' + vr.lo + '-' + vr.hi : '');
     if (scn.fills[key]) return scn.fills[key];
     var W = manifest.width, H = manifest.height;
     var c = document.createElement('canvas'); c.width = W; c.height = H;
@@ -732,14 +791,29 @@
     var mid = vp.stretch ? vp.vmax * 0.25 : vp.vmax * 0.5;
     return { mid: mid.toFixed(1), max: vp.vmax.toFixed(1) + ' ' + u.velocity + (vp.stretch ? ' (slow speeds stretched)' : '') };
   }
+  // The colour scheme list follows the shading: depth schemes while showing depth, velocity schemes while showing velocity.
+  function syncRampSelect(mode) {
+    var wrap = $('rampwrap');
+    if (mode === 'none') { wrap.style.display = 'none'; return; }
+    wrap.style.display = 'block';
+    var sel = $('ramp');
+    if (sel.getAttribute('data-mode') !== mode) {
+      sel.innerHTML = '';
+      RAMP_DEFS[mode].forEach(function (r) { var o = document.createElement('option'); o.value = r.id; o.textContent = r.label; sel.appendChild(o); });
+      sel.setAttribute('data-mode', mode);
+    }
+    sel.value = rampSel[mode];
+    $('ramplabel').textContent = (mode === 'depth' ? 'Depth' : 'Velocity') + ' color scheme';
+  }
   function updateLegend() {
     var mode = $('fill').value;
     var show = mode !== 'none';
+    syncRampSelect(mode);
     $('legend').style.display = show ? 'block' : 'none';
     $('velopts').style.display = mode === 'velocity' ? 'block' : 'none';
     if (!show) return;
     $('legtitle').textContent = mode === 'depth' ? 'Water depth' : 'Velocity';
-    $('legbar').style.background = LEGEND_CSS[mode];
+    $('legbar').style.background = legendCss(mode);
     var L2 = legendLabels(mode);
     $('legmid').textContent = mode === 'depth' ? '' : L2.mid;
     $('legmax').textContent = L2.max;
@@ -928,6 +1002,8 @@
     q.set('a', $('q').value);
     if (compare) { q.set('c', '1'); q.set('b', $('qb').value); q.set('sw', swipeFrac.toFixed(2)); }
     if ($('fill').value !== 'depth') q.set('f', $('fill').value);
+    if (rampSel.depth !== RAMP_DEFAULT.depth) q.set('rd', rampSel.depth);
+    if (rampSel.velocity !== RAMP_DEFAULT.velocity) q.set('rv', rampSel.velocity);
     if (!linesOn) q.set('l', '0');
     var vr = velRange();
     if (vr.active) { q.set('vlo', vr.lo.toFixed(2)); q.set('vhi', vr.hi.toFixed(2)); }
@@ -936,6 +1012,7 @@
       q.set('crit', [c.dmin, c.dmax, c.vmin, c.vmax].map(function (x) { return x === null ? '' : x; }).join(','));
       if ($('hl').checked) q.set('hl', '1');
     }
+    if (pinSpec) { q.set('pin', pinSpec); if (pinName) q.set('pn', pinName); }
     if (map) { var ct = map.getCenter(); q.set('ll', ct.lat.toFixed(5) + ',' + ct.lng.toFixed(5)); q.set('z', map.getZoom().toFixed(2)); }
     return location.href.split('#')[0].split('?')[0] + '?' + q.toString().replace(/%2C/g, ',');
   }
@@ -1228,7 +1305,7 @@
       var lw = 190, lx = 12, ly = size.y - 84;
       c.fillStyle = 'rgba(14,27,51,0.88)'; roundRect(c, lx, ly, lw + 20, 72, 6); c.fill();
       var g = c.createLinearGradient(lx + 10, 0, lx + 10 + lw, 0);
-      LEGEND_STOPS[mode].forEach(function (s) { g.addColorStop(s[0], s[1]); });
+      legendStops(mode).forEach(function (s) { g.addColorStop(s[0], s[1]); });
       c.fillStyle = g; c.fillRect(lx + 10, ly + 22, lw, 10);
       c.fillStyle = '#e8eef7'; c.font = '12px -apple-system, Segoe UI, Roboto, sans-serif'; c.textAlign = 'left';
       c.fillText(mode === 'depth' ? 'Water depth' : 'Velocity', lx + 10, ly + 12);
