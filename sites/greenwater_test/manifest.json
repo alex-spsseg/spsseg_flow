@@ -31,18 +31,18 @@
  },
  "discharges": [
   {
-   "id": "Q10_ec",
-   "name": "Q10_ec",
-   "label": "Q10 (Existing Conditions)",
-   "value": "~4000ish",
-   "flow": true,
-   "wse": true
-  },
-  {
    "id": "Q2_ec",
    "name": "Q2_ec",
    "label": "Q2 (Existing Conditions)",
    "value": "~900ish?",
+   "flow": true,
+   "wse": true
+  },
+  {
+   "id": "Q10_ec",
+   "name": "Q10_ec",
+   "label": "Q10 (Existing Conditions)",
+   "value": "~4000ish",
    "flow": true,
    "wse": true
   },

@@ -258,7 +258,7 @@
         <div class="ctl"><label for="trail">Trail length</label><input id="trail" type="range" min="0.85" max="0.985" step="0.005" value="0.95"></div>
         <div class="ctl"><label for="lineop">Line opacity <span id="lineopv"></span></label><input id="lineop" type="range" min="0.15" max="1" step="0.05" value="0.7"></div>
       </div>
-      <div id="note">Particle speed is scaled for visibility and shows relative flow only. Click the map for depth and velocity at a point.</div>
+      <div id="note">Particle speed is proportional to velocity (twice as fast water moves twice as fast), and the Speed slider scales all of it together. It is not real distance per second, and it does not change when you zoom. Click the map for depth and velocity at a point.</div>
     </details>
 
     <details class="sec" id="filtsec">
@@ -373,7 +373,7 @@
       { id: 'coolwarm', label: 'Cool to warm', stops: [[0, [59, 76, 192, 225]], [0.25, [141, 176, 254, 225]], [0.5, [221, 221, 221, 225]], [0.75, [244, 154, 123, 230]], [1, [180, 4, 38, 235]]] }
     ]
   };
-  var RAMP_DEFAULT = { depth: 'blues2', velocity: 'viridis' };
+  var RAMP_DEFAULT = { depth: 'blues2', velocity: 'rainbow' };
   function rampValid(mode, id) {
     var l = RAMP_DEFS[mode];
     for (var i = 0; i < l.length; i++) if (l[i].id === id) return id;
@@ -425,7 +425,7 @@
   function legendCss(mode) { return rampCss(mode, rampSel[mode]); }
   function legendStops(mode) { return rampStops(mode, rampSel[mode]); }
 
-  fetch(base + 'manifest.json', { cache: 'no-store' })
+  fetch(base + 'manifest.json?t=' + Date.now(), { cache: 'no-store' })
     .then(function (r) { if (!r.ok) throw new Error('Site "' + siteId + '" was not found.'); return r.json(); })
     .then(init)
     .catch(function (e) { fail(e.message || String(e)); });
@@ -862,9 +862,22 @@
     });
   }
 
+  // GitHub Pages can serve a new manifest next to old pictures for several minutes after a publish. Each picture is
+  // asked for by build number, checked against the size the manifest promises, and fetched fresh once if it differs.
+  function loadChecked(name) {
+    var ok = function (im) { return im.width === manifest.width && im.height === manifest.height; };
+    return loadImg(base + name + '?v=' + (manifest.built || '')).then(function (im) {
+      if (ok(im)) return im;
+      return loadImg(base + name + '?v=r' + Date.now()).then(function (im2) {
+        if (ok(im2)) return im2;
+        throw new Error('The picture files for this site do not match its description (' + name + ' is ' + im2.width + ' by ' + im2.height +
+          ', expected ' + manifest.width + ' by ' + manifest.height + '). GitHub Pages may still be updating after a publish. Wait a few minutes and reload.');
+      });
+    });
+  }
   function loadScenario(id) {
     if (cache[id]) return Promise.resolve(cache[id]);
-    return Promise.all([loadImg(base + 'depth_' + id + '.png'), loadImg(base + 'flow_' + id + '.png')]).then(function (r) {
+    return Promise.all([loadChecked('depth_' + id + '.png'), loadChecked('flow_' + id + '.png')]).then(function (r) {
       var d = (manifest.discharges.filter(function (x) { return x.id === id; })[0]) || { id: id, label: id };
       return (cache[id] = { id: id, meta: d, depth: r[0], flow: r[1], fills: {} });
     });
@@ -968,7 +981,7 @@
   function ensureWse(sc) {
     if (sc.wse !== undefined) return Promise.resolve(sc);
     if (!sc.meta.wse) { sc.wse = null; return Promise.resolve(sc); }
-    return loadImg(base + 'wse_' + sc.id + '.png').then(function (im) { sc.wse = im; return sc; }, function () { sc.wse = null; return sc; });
+    return loadChecked('wse_' + sc.id + '.png').then(function (im) { sc.wse = im; return sc; }, function () { sc.wse = null; return sc; });
   }
   // Loads whatever the current difference needs (the water surface images load only when asked for).
   function prepDiff() {
@@ -1625,7 +1638,7 @@
       var ux = f[idx] / 255 * 2 - 1, uy = f[idx + 1] / 255 * 2 - 1, s = f[idx + 2] / 255;
       if (s < minS || (maxS < 1 && s > maxS)) { p.life = 0; continue; }
       if (minC > 0 && dd[idx + 2] / 255 < minC) { p.life = 0; continue; }
-      var step = speedK * (0.25 + 2.2 * Math.sqrt(s)) / perPx;
+      var step = speedK * 4.0 * s / perPx;   // proportional to velocity: twice the velocity moves twice as fast
       p.pi = p.i; p.pj = p.j;
       p.i += ux * step; p.j += uy * step;
       p.life--;
