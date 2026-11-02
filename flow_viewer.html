@@ -185,7 +185,7 @@
       <select id="fill" style="display:none">
         <option value="depth">Depth</option>
         <option value="velocity">Velocity</option>
-        <option value="diff">Change (left minus right)</option>
+        <option value="diff">Change (right minus left)</option>
         <option value="none">None (flow lines only)</option>
       </select>
       <div id="diffopts" style="display:none">
@@ -197,7 +197,7 @@
         </select>
         <label for="drange">Color range <span id="drangev"></span></label>
         <input id="drange" type="range" min="0.05" max="5" step="0.05" value="1">
-        <div class="hint2" id="dnote">Left scenario minus right scenario. Red is higher on the left, blue is lower.</div>
+        <div class="hint2" id="dnote">Right scenario minus left scenario. Red is higher on the right, blue is lower.</div>
         <div class="hint2" id="dsum" style="color:#cbd8ec"></div>
       </div>
     <div class="scenhead"><span class="t">Scenario</span><label class="check"><input type="checkbox" id="cmp"> Compare</label></div>
@@ -971,7 +971,7 @@
   function isDiff() { return $('fill').value === 'diff'; }
   function diffMeasure() { return $('dmeasure').value; }
   function diffUnit(m) { return m === 'velocity' ? manifest.units.velocity : manifest.units.length; }
-  function diffTitle(m) { return (m === 'depth' ? 'Depth change' : m === 'velocity' ? 'Velocity change' : 'Water surface change') + ' (left minus right)'; }
+  function diffTitle(m) { return (m === 'depth' ? 'Depth change' : m === 'velocity' ? 'Velocity change' : 'Water surface change') + ' (right minus left)'; }
   function niceRange(v) {
     var steps = [0.05, 0.1, 0.2, 0.25, 0.5, 1, 1.5, 2, 3, 5, 10, 20, 50, 100];
     for (var i = 0; i < steps.length; i++) if (steps[i] >= v) return steps[i];
@@ -1017,7 +1017,7 @@
           vb = ab ? fb[p + 2] / 255 * ms : 0;
         }
       }
-      var d = va - vb;
+      var d = vb - va;
       out[i] = d; cnt++; sum += d;
       if (d > thr) up++; else if (d < -thr) down++;
       if (Math.abs(d) > big) big = Math.abs(d);
@@ -1078,7 +1078,7 @@
     if (diffState.unavailable) { $('dsum').textContent = diffState.unavailable; return; }
     if (!dd) { $('dsum').textContent = ''; return; }
     var sign = dd.mean >= 0 ? '+' : '\u2212';
-    $('dsum').textContent = 'Higher on ' + dd.up.toFixed(1) + ' ac, lower on ' + dd.down.toFixed(1) + ' ac. Mean change ' + sign + fmtNum(Math.abs(dd.mean)) + ' ' + u +
+    $('dsum').textContent = 'Right is higher on ' + dd.up.toFixed(1) + ' ac and lower on ' + dd.down.toFixed(1) + ' ac. Mean change ' + sign + fmtNum(Math.abs(dd.mean)) + ' ' + u +
       ' across ' + dd.area.toFixed(1) + ' ac compared.' + (m === 'wse' ? ' Water surface compares only where both scenarios are wet.' : '');
   }
   function diffAt(idx) {
@@ -1088,7 +1088,7 @@
     if (!dd) return '';
     var d = dd.arr[idx / 4];
     if (d !== d) return 'No change value here';
-    return diffTitle(m).replace(' (left minus right)', '') + ': ' + (d >= 0 ? '+' : '\u2212') + Math.abs(d).toFixed(2) + ' ' + diffUnit(m);
+    return diffTitle(m).replace(' (right minus left)', '') + ': ' + (d >= 0 ? '+' : '\u2212') + Math.abs(d).toFixed(2) + ' ' + diffUnit(m);
   }
   function diffRangeChanged() {
     diffState.range = +$('drange').value;
@@ -1339,13 +1339,13 @@
     lastExport = { left: setA.scn.meta.label + (setA.scn.meta.value ? ' (' + setA.scn.meta.value + ')' : ''),
                    right: B ? setB.scn.meta.label + (setB.scn.meta.value ? ' (' + setB.scn.meta.value + ')' : '') : null,
                    scope: sc0.label, rows: [], crit: '' };
-    var h = '<table class="mt"><tr><th></th>' + (B ? '<th>Left</th><th>Right</th><th title="Left minus right">L minus R</th>' : '<th>' + (setA.scn.meta.label || '') + '</th>') + '</tr>';
+    var h = '<table class="mt"><tr><th></th>' + (B ? '<th>Left</th><th>Right</th><th title="Right minus left">R minus L</th>' : '<th>' + (setA.scn.meta.label || '') + '</th>') + '</tr>';
     rows.forEach(function (r) {
       var k = r[1];
       h += '<tr><td' + (k === 'p90V' ? ' title="Velocity that 90 percent of the wet area is below"' : '') + '>' + r[0] + ' <small style="display:inline;color:#7f93b0">' + r[2] + '</small></td>';
-      lastExport.rows.push({ name: r[0], unit: r[2], a: A[k], b: B ? B[k] : null, d: B ? A[k] - B[k] : null, p: (B && r[3]) ? pct(B[k], A[k]) : NaN });
+      lastExport.rows.push({ name: r[0], unit: r[2], a: A[k], b: B ? B[k] : null, d: B ? B[k] - A[k] : null, p: (B && r[3]) ? pct(A[k], B[k]) : NaN });
       if (B) {
-        h += '<td>' + fmtN(A[k]) + '</td><td>' + fmtN(B[k]) + '</td><td>' + fmtS(A[k] - B[k]) + (r[3] ? '<small>' + fmtPct(pct(B[k], A[k])) + '</small>' : '') + '</td>';
+        h += '<td>' + fmtN(A[k]) + '</td><td>' + fmtN(B[k]) + '</td><td>' + fmtS(B[k] - A[k]) + (r[3] ? '<small>' + fmtPct(pct(A[k], B[k])) + '</small>' : '') + '</td>';
       } else h += '<td>' + fmtN(A[k]) + '</td>';
       h += '</tr>';
     });
@@ -1356,12 +1356,12 @@
       var c = crit(), nA = countCrit(setA.scn, c), nB = B ? countCrit(setB.scn, c) : 0;
       var area = function (n) { return n * pxAreaM2() / (us ? 4046.8564224 : 10000); };
       var sh = function (n, tot) { return tot ? (n / tot * 100).toFixed(1) + '%' : 'n/a'; };
-      cr = '<table class="mt"><tr><th></th>' + (B ? '<th>Left</th><th>Right</th><th title="Left minus right">L minus R</th>' : '<th></th>') + '</tr>';
+      cr = '<table class="mt"><tr><th></th>' + (B ? '<th>Left</th><th>Right</th><th title="Right minus left">R minus L</th>' : '<th></th>') + '</tr>';
       lastExport.crit = critText();
-      lastExport.rows.push({ name: 'Habitat area', unit: us ? 'ac' : 'ha', a: area(nA), b: B ? area(nB) : null, d: B ? area(nA) - area(nB) : null, p: B ? pct(nB, nA) : NaN });
+      lastExport.rows.push({ name: 'Habitat area', unit: us ? 'ac' : 'ha', a: area(nA), b: B ? area(nB) : null, d: B ? area(nB) - area(nA) : null, p: B ? pct(nA, nB) : NaN });
       lastExport.rows.push({ name: 'Share of wet area', unit: '%', a: A.n ? nA / A.n * 100 : NaN, b: B ? (B.n ? nB / B.n * 100 : NaN) : null, d: null, p: NaN });
       cr += '<tr><td>Area <small style="display:inline;color:#7f93b0">' + (us ? 'ac' : 'ha') + '</small></td>';
-      if (B) cr += '<td>' + fmtN(area(nA)) + '</td><td>' + fmtN(area(nB)) + '</td><td>' + fmtS(area(nA) - area(nB)) + '<small>' + fmtPct(pct(nB, nA)) + '</small></td>';
+      if (B) cr += '<td>' + fmtN(area(nA)) + '</td><td>' + fmtN(area(nB)) + '</td><td>' + fmtS(area(nB) - area(nA)) + '<small>' + fmtPct(pct(nA, nB)) + '</small></td>';
       else cr += '<td>' + fmtN(area(nA)) + '</td>';
       cr += '</tr><tr><td>Share of wet area</td>';
       if (B) cr += '<td>' + sh(nA, A.n) + '</td><td>' + sh(nB, B.n) + '</td><td></td>'; else cr += '<td>' + sh(nA, A.n) + '</td>';
@@ -1384,7 +1384,7 @@
     if (cmp) out.push(['Right', e.right]);
     if (e.crit) out.push(['Habitat criteria', e.crit]);
     out.push([]);
-    out.push(cmp ? ['Metric', 'Unit', 'Left', 'Right', 'Left minus right', 'Percent of right'] : ['Metric', 'Unit', e.left]);
+    out.push(cmp ? ['Metric', 'Unit', 'Left', 'Right', 'Right minus left', 'Percent of left'] : ['Metric', 'Unit', e.left]);
     e.rows.forEach(function (r) { out.push(cmp ? [r.name, r.unit, num(r.a), num(r.b), num(r.d), num(r.p)] : [r.name, r.unit, num(r.a)]); });
     return out;
   }
@@ -1534,7 +1534,7 @@
     $('tagB').style.left = (x + 22) + 'px';
     // In change mode there is no swipe bar, so one label names the difference
     if (isDiff() && setB.scn) {
-      $('tagA').textContent = setA.scn.meta.label + ' minus ' + setB.scn.meta.label;
+      $('tagA').textContent = setB.scn.meta.label + ' minus ' + setA.scn.meta.label;
       $('tagA').style.display = 'block'; $('tagB').style.display = 'none';
       $('tagA').style.right = 'auto';
       $('tagA').style.left = Math.max(12, Math.round(w / 2 - $('tagA').offsetWidth / 2)) + 'px';
@@ -1812,7 +1812,7 @@
     }
     chip(manifest.title, 12, 12, 'left');
     if (cmpOn && isDiff()) {
-      chip(setA.scn.meta.label + ' minus ' + setB.scn.meta.label, 12, 46, 'left');
+      chip(setB.scn.meta.label + ' minus ' + setA.scn.meta.label, 12, 46, 'left');
     } else if (cmpOn) {
       chip(setA.scn.meta.label, 12, 46, 'left');
       chip(setB.scn.meta.label, size.x - 12, 46, 'right');
