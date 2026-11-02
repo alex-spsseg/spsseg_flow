@@ -14,7 +14,7 @@
   #fill-canvas { z-index: 420; }
   #flow-canvas { z-index: 450; }
   #panel {
-    position: absolute; z-index: 1000; top: 12px; left: 12px; width: 320px; max-width: calc(100% - 24px);
+    position: absolute; z-index: 1000; top: 12px; left: 12px; width: 340px; max-width: calc(100% - 24px);
     max-height: calc(100% - 24px); overflow-y: auto;
     background: rgba(14, 27, 51, 0.92); color: #e8eef7; border: 1px solid #1b3f95; border-radius: 10px; padding: 14px;
   }
@@ -30,6 +30,10 @@
   #panel button { cursor: pointer; margin-top: 10px; }
   #panel button:hover, #panel select:hover { border-color: #019fc4; }
   #panel input[type=range] { width: 100%; }
+  #panel input[type=range], #panel input[type=checkbox], #panel input[type=radio] { accent-color: #019fc4; }
+  #rampwrap { display: none !important; }
+  .viewblock .scenhead { border-top: none; margin-top: 12px; padding-top: 0; }
+  #panel .hint2 { font-size: 11px; color: #7f93b0; margin-top: 2px; line-height: 1.4; }
   #panel .check { display: flex; align-items: center; gap: 8px; margin: 12px 0 0; color: #e8eef7; font-size: 13px; }
   #panel .check input { width: auto; }
   #bwrap { display: none; }
@@ -37,7 +41,7 @@
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
   .grid2 .ctl { min-width: 0; }
   .grid2 .ctl label { font-size: 11px; margin: 8px 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  #lineopts.off { opacity: 0.4; pointer-events: none; }
+  #lineopts.off, #lineclrwrap.off { opacity: 0.4; pointer-events: none; }
   details.sec > summary { cursor: pointer; color: #fff; font-size: 13px; font-weight: 600; padding: 7px 0 2px; list-style: none; user-select: none; }
   details.sec > summary::-webkit-details-marker { display: none; }
   details.sec > summary::before { content: "\25B8"; display: inline-block; width: 14px; color: #019fc4; transition: transform .12s; }
@@ -75,26 +79,45 @@
   table.mt td small { display: block; color: #7f93b0; }
   table.mt tr.sub td { color: #9fb2cc; border-top: none; padding-top: 0; }
   table.mt tr.head td { border-top: 1px solid #1b3f95; color: #fff; font-weight: 600; padding-top: 8px; }
+  .mbtns { display: flex; gap: 6px; }
+  #panel .mbtns button { width: auto; flex: 1 1 0; margin-top: 8px; padding: 5px 6px; font-size: 12px; }
   .crit { margin-top: 4px; }
   .crithead { margin-top: 12px; padding-top: 8px; border-top: 1px solid #1b3f95; font-size: 12px; font-weight: 600; color: #fff; line-height: 1.4; }
   table.mt td:first-child { white-space: nowrap; }
   .crit .cr { display: flex; align-items: center; gap: 6px; margin: 6px 0; font-size: 12px; color: #9fb2cc; }
   .crit .cr span.l { width: 54px; }
   #panel input[type=number] { width: 60px; background: #132447; color: #fff; border: 1px solid #1b3f95; border-radius: 6px; padding: 5px 6px; font-size: 12px; }
+  #panel input[type=number].bad { border-color: #e0786b; }
+  #critwarn { font-size: 11px; color: #f2b36b; margin-top: 2px; display: none; }
   .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; background: rgb(255,150,30); margin-right: 6px; vertical-align: -1px; }
   #metnote { margin-top: 8px; font-size: 11px; color: #7f93b0; line-height: 1.4; }
-  #panel .two select#flowA, #panel .two select#flowB { flex: 1.5 1 0; }
-  .dual { position: relative; height: 30px; margin-top: 4px; }
-  .dual .track { position: absolute; left: 8px; right: 8px; top: 13px; height: 4px; border-radius: 2px; background: #2a3d66; }
-  .dual .seg { position: absolute; top: 13px; height: 4px; border-radius: 2px; background: #019fc4; }
-  #panel .dual input[type=range] { position: absolute; left: 0; top: 6px; width: 100%; height: 18px; margin: 0; background: none;
+  #panel .two select#flowA, #panel .two select#flowB { flex: 0 0 76px; }
+  #panel .two select#scenA, #panel .two select#scenB { flex: 1 1 0; text-overflow: ellipsis; }
+  .dual { position: relative; height: 34px; margin-top: 2px; }
+  .dual .track { position: absolute; left: 10px; right: 10px; top: 15px; height: 4px; border-radius: 2px; background: #2a3d66; }
+  .dual .seg { position: absolute; top: 15px; height: 4px; border-radius: 2px; background: #019fc4; }
+  #panel .dual input[type=range] { position: absolute; left: 0; top: 6px; width: 100%; height: 22px; margin: 0; background: none;
     pointer-events: none; -webkit-appearance: none; appearance: none; }
-  .dual input[type=range]::-webkit-slider-runnable-track { background: none; -webkit-appearance: none; height: 18px; }
+  .dual input[type=range]::-webkit-slider-runnable-track { background: none; -webkit-appearance: none; height: 22px; }
   .dual input[type=range]::-moz-range-track { background: none; }
-  .dual input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; pointer-events: auto; width: 16px; height: 16px; margin-top: 1px;
+  .dual input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; pointer-events: auto; width: 20px; height: 20px; margin-top: 1px;
     border-radius: 50%; background: #fff; border: 2px solid #019fc4; cursor: ew-resize; box-shadow: 0 1px 4px rgba(0,0,0,.5); }
-  .dual input[type=range]::-moz-range-thumb { pointer-events: auto; width: 12px; height: 12px; border-radius: 50%; background: #fff;
+  .dual input[type=range]::-moz-range-thumb { pointer-events: auto; width: 16px; height: 16px; border-radius: 50%; background: #fff;
     border: 2px solid #019fc4; cursor: ew-resize; box-shadow: 0 1px 4px rgba(0,0,0,.5); }
+  .fgroup { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: #7f93b0; margin: 14px 0 0; }
+  .fhead { display: flex; align-items: center; gap: 6px; margin: 8px 0 2px; }
+  .fhead .fname { font-size: 12px; color: #cbd8ec; flex: 1; }
+  .fhead .fval { font-size: 12px; color: #e8eef7; }
+  .fhead .fval.chg { color: #019fc4; font-weight: 600; }
+  .info { display: inline-flex; align-items: center; justify-content: center; width: 13px; height: 13px; margin-left: 4px; border-radius: 50%;
+    border: 1px solid #5d7399; color: #9fb2cc; font-size: 9px; font-style: italic; cursor: help; vertical-align: middle; }
+  #panel .rst { width: 18px; margin: 0; padding: 0; border: none; background: none; color: #019fc4; font-size: 14px; line-height: 1; visibility: hidden; cursor: pointer; }
+  #panel .rst.on { visibility: visible; }
+  #panel .rst:hover { color: #5fd6f0; }
+  .vbox { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #9fb2cc; margin-top: 2px; }
+  #panel .vbox input[type=number] { width: 64px; }
+  #fclear { display: none; }
+  #fclear.on { display: block; }
   #legend { position: absolute; z-index: 950; right: 12px; bottom: 30px; width: 220px; background: rgba(14,27,51,0.9); border: 1px solid #1b3f95;
     border-radius: 8px; padding: 8px 10px; font-size: 11px; color: #9fb2cc; }
   #legend .bar { height: 10px; border-radius: 3px; margin: 4px 0 2px; }
@@ -156,21 +179,27 @@
       <div class="seg3" id="fillseg">
         <button type="button" data-v="depth">Depth</button>
         <button type="button" data-v="velocity">Velocity</button>
+        <button type="button" data-v="diff" id="diffbtn">Change</button>
         <button type="button" data-v="none">None</button>
       </div>
       <select id="fill" style="display:none">
         <option value="depth">Depth</option>
         <option value="velocity">Velocity</option>
+        <option value="diff">Change (left minus right)</option>
         <option value="none">None (flow lines only)</option>
       </select>
-      <div id="rampwrap" style="display:none">
-        <label for="ramp" id="ramplabel">Color scheme</label>
-        <select id="ramp"></select>
+      <div id="diffopts" style="display:none">
+        <label for="dmeasure">Show change in</label>
+        <select id="dmeasure">
+          <option value="depth">Depth</option>
+          <option value="velocity">Velocity</option>
+          <option value="wse">Water surface elevation</option>
+        </select>
+        <label for="drange">Color range <span id="drangev"></span></label>
+        <input id="drange" type="range" min="0.05" max="5" step="0.05" value="1">
+        <div class="hint2" id="dnote">Left scenario minus right scenario. Red is higher on the left, blue is lower.</div>
+        <div class="hint2" id="dsum" style="color:#cbd8ec"></div>
       </div>
-      <label class="check"><input type="checkbox" id="showlines" checked> Show flow animation</label>
-      <div id="noflow" style="display:none; margin-top:6px; font-size:11px; color:#f2b36b;">No flow direction for this scenario, so it shows shading only.</div>
-    </div>
-
     <div class="scenhead"><span class="t">Scenario</span><label class="check"><input type="checkbox" id="cmp"> Compare</label></div>
     <div id="pairA" class="pairrow">
       <span class="side">L</span>
@@ -200,29 +229,22 @@
         <button id="swap" type="button" title="Swap the left and right scenarios">Swap sides</button>
       </div>
     </div>
-
-    <details class="sec" id="metsec">
-      <summary>Metrics <span class="hint" id="metsum"></span></summary>
-      <div id="metrics"></div>
-      <label class="check"><input type="checkbox" id="mpic" checked> Add these numbers to saved pictures</label>
-      <div id="metnote">Numbers come from the mapped wet area at the raster resolution, so treat them as estimates.</div>
-    </details>
-
-    <details class="sec" id="habsec">
-      <summary>Habitat criteria <span class="hint" id="habsum">off</span></summary>
-      <div class="crit">
-        <div class="cr"><span class="l">Depth</span><input id="cdmin" type="number" step="0.1" min="0" placeholder="min"> to <input id="cdmax" type="number" step="0.1" min="0" placeholder="max"></div>
-        <div class="cr"><span class="l">Velocity</span><input id="cvmin" type="number" step="0.1" min="0" placeholder="min"> to <input id="cvmax" type="number" step="0.1" min="0" placeholder="max"></div>
+      <div id="rampwrap" style="display:none">
+        <label for="ramp" id="ramplabel">Color scheme</label>
+        <select id="ramp"></select>
       </div>
-      <div id="metnote2" style="font-size:11px;color:#7f93b0;margin-top:2px">In <span id="critunits"></span>. Leave a box empty for no limit.</div>
-      <label class="check"><input type="checkbox" id="hl"> <span><span class="swatch"></span>Highlight these cells on the map</span></label>
-      <div id="critres"></div>
-    </details>
+      <label class="check"><input type="checkbox" id="showlines" checked> Show flow animation</label>
+      <div id="noflow" style="display:none; margin-top:6px; font-size:11px; color:#f2b36b;">No flow direction for this scenario, so it shows shading only.</div>
+    </div>
 
     <details class="sec" id="appsec">
       <summary>Appearance</summary>
+      <div id="rampwrap2" style="display:none">
+        <label for="ramp2" id="ramplabel2">Color scheme</label>
+        <select id="ramp2"></select>
+      </div>
       <div class="grid2">
-        <div class="ctl"><label for="op">Shading opacity</label><input id="op" type="range" min="0" max="1" step="0.05" value="0.8"></div>
+        <div class="ctl"><label for="op">Shading opacity</label><input id="op" type="range" min="0" max="1" step="0.05" value="1"></div>
         <div class="ctl"><label for="dimbase">Dim imagery <span id="dimv"></span></label><input id="dimbase" type="range" min="0" max="0.85" step="0.05" value="0.2"></div>
       </div>
       <div id="velopts" style="display:none">
@@ -234,23 +256,73 @@
         <div class="ctl"><label for="dens">Line density <span id="densv"></span></label><input id="dens" type="range" min="0.25" max="3" step="0.05" value="1"></div>
         <div class="ctl"><label for="spd">Speed <span id="spdv"></span></label><input id="spd" type="range" min="0.2" max="4" step="0.1" value="1"></div>
         <div class="ctl"><label for="trail">Trail length</label><input id="trail" type="range" min="0.85" max="0.985" step="0.005" value="0.95"></div>
+        <div class="ctl"><label for="lineop">Line opacity <span id="lineopv"></span></label><input id="lineop" type="range" min="0.15" max="1" step="0.05" value="0.7"></div>
       </div>
       <div id="note">Particle speed is scaled for visibility and shows relative flow only. Click the map for depth and velocity at a point.</div>
     </details>
 
-    <details class="sec">
-      <summary>Filters</summary>
-      <label>Show velocities <span id="vrange"></span></label>
+    <details class="sec" id="filtsec">
+      <summary>Filters <span class="hint" id="filtsum"></span></summary>
+      <div class="fgroup" style="margin-top:6px">Water</div>
+      <div class="fhead">
+        <label class="fname" for="mind" style="margin:0">Minimum depth<span class="info" title="Display only. Hides thin shallow edges from the shading and flow lines. Metrics still count every mapped cell.">i</span></label>
+        <span class="fval" id="mindv"></span>
+        <button class="rst" id="rst_mind" type="button" title="Reset" aria-label="Reset minimum depth">&#8634;</button>
+      </div>
+      <input id="mind" type="range" min="0" max="1" step="0.01" value="0.05">
+      <div class="fgroup">Flow</div>
+      <div class="fhead">
+        <span class="fname">Velocity range<span class="info" title="Shows only the shading and flow lines inside this speed range. Everything outside it is dimmed or hidden.">i</span></span>
+        <span class="fval" id="vrange"></span>
+        <button class="rst" id="rst_vel" type="button" title="Reset" aria-label="Reset velocity range">&#8634;</button>
+      </div>
       <div class="dual">
         <div class="track"></div><div class="seg" id="vseg"></div>
-        <input id="vlo" type="range" min="0" max="1" step="0.01" value="0" aria-label="Lowest velocity shown">
-        <input id="vhi" type="range" min="0" max="1" step="0.01" value="1" aria-label="Highest velocity shown">
+        <input id="vlo" type="range" min="0" max="1" step="0.002" value="0" aria-label="Lowest velocity shown">
+        <input id="vhi" type="range" min="0" max="1" step="0.002" value="1" aria-label="Highest velocity shown">
       </div>
-      <label class="check"><input type="checkbox" id="vshade"> Also dim the shading outside this range</label>
+      <div class="vbox"><input id="vlon" type="number" min="0" step="0.1" placeholder="0" aria-label="Lowest velocity"> to <input id="vhin" type="number" min="0" step="0.1" placeholder="max" aria-label="Highest velocity"> <span id="vunit"></span></div>
       <div id="confwrap" style="display:none">
-        <label for="minconf">Hide uncertain flow direction <span id="minconfv"></span></label>
+        <div class="fhead">
+          <label class="fname" for="minconf" style="margin:0">Flow confidence<span class="info" title="Hides flow lines where the model's flow direction is uncertain, for example along false seams.">i</span></label>
+          <span class="fval" id="minconfv"></span>
+          <button class="rst" id="rst_conf" type="button" title="Reset" aria-label="Reset flow confidence">&#8634;</button>
+        </div>
         <input id="minconf" type="range" min="0" max="0.9" step="0.05" value="0">
       </div>
+      <button id="fclear" type="button">Reset all filters</button>
+    </details>
+
+    <details class="sec" id="metsec">
+      <summary>Metrics <span class="hint" id="metsum"></span></summary>
+      <label for="mscope">Measure</label>
+      <select id="mscope">
+        <option value="site">Whole site</option>
+        <option value="view">Current map view</option>
+        <option value="poly">Drawn area</option>
+      </select>
+      <div id="polybtns" class="mbtns" style="display:none">
+        <button id="polydraw" type="button">Draw area</button>
+        <button id="polyclear" type="button">Clear area</button>
+      </div>
+      <div class="hint2" id="mscopenote"></div>
+      <div id="metrics"></div>
+      <div class="mbtns"><button id="mcopy" type="button">Copy table</button><button id="mcsv" type="button">Download CSV</button></div>
+      <label class="check"><input type="checkbox" id="mpic" checked> Add these numbers to saved pictures</label>
+      <div id="metnote">Numbers come from the mapped wet area at the raster resolution, so treat them as estimates.</div>
+    </details>
+
+    <details class="sec" id="habsec">
+      <summary>Habitat criteria <span class="hint" id="habsum">off</span></summary>
+      <div class="crit">
+        <div class="cr"><span class="l">Depth</span><input id="cdmin" type="number" step="0.1" min="0" placeholder="min"> to <input id="cdmax" type="number" step="0.1" min="0" placeholder="max"></div>
+        <div class="cr"><span class="l">Velocity</span><input id="cvmin" type="number" step="0.1" min="0" placeholder="min"> to <input id="cvmax" type="number" step="0.1" min="0" placeholder="max"></div>
+      </div>
+      <div id="metnote2" style="font-size:11px;color:#7f93b0;margin-top:2px">In <span id="critunits"></span>. Leave a box empty for no limit.</div>
+      <div id="critwarn"></div>
+      <label class="check"><input type="checkbox" id="hl"> <span><span class="swatch"></span>Highlight these cells on the map</span></label>
+      <div id="critres"></div>
+      <button id="cclear" type="button">Clear criteria</button>
     </details>
   </div>
 </div>
@@ -258,7 +330,7 @@
 <div id="legend">
   <div id="legtitle">Water depth</div>
   <div class="bar" id="legbar"></div>
-  <div class="row"><span>0</span><span id="legmid"></span><span id="legmax"></span></div>
+  <div class="row"><span id="legmin">0</span><span id="legmid"></span><span id="legmax"></span></div>
 </div>
 
 <script>
@@ -342,6 +414,7 @@
     var lo = +$('vlo').value, hi = +$('vhi').value;
     return { lo: lo, hi: hi, active: lo > 0 || hi < 1 };
   }
+  var defaultMinDepth = 0.05;
   function clearFills() { Object.keys(cache).forEach(function (k) { cache[k].fills = {}; }); }
   function velParams() {
     var frac = (+$('vmax').value || 100) / 100;
@@ -395,6 +468,30 @@
     ['move', 'zoom', 'viewreset'].forEach(function (ev) { map.on(ev, function () { clearTrails(); redrawFill(); }); });
     map.on('resize', function () { resizeCanvas(); updateSwipePos(); redrawFill(); });
     map.on('click', onMapClick);
+    map.createPane('scopepane').style.zIndex = 470;
+    map.getPane('scopepane').style.pointerEvents = 'none';
+    map.on('dblclick', function () { if (scopeState.drawing) { scopeState.pts.pop(); finishDraw(); } });
+    var viewTimer = null;
+    map.on('moveend', function () {
+      if ($('mscope').value !== 'view') return;
+      clearTimeout(viewTimer);
+      viewTimer = setTimeout(renderMetrics, 200);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (!scopeState.drawing) return;
+      if (e.key === 'Escape') clearPoly();
+      else if (e.key === 'Enter') finishDraw();
+    });
+    $('mscope').addEventListener('change', function () {
+      if ($('mscope').value !== 'poly' && scopeState.drawing) clearPoly();
+      if ($('mscope').value === 'poly' && !scopeState.poly && !scopeState.drawing) startDraw();
+      updatePolyUI(); renderMetrics();
+    });
+    $('polydraw').addEventListener('click', function () { if (scopeState.drawing) finishDraw(); else startDraw(); });
+    $('polyclear').addEventListener('click', clearPoly);
+    $('mcopy').addEventListener('click', copyTable);
+    $('mcsv').addEventListener('click', csvTable);
+    updatePolyUI();
     map.on('moveend', scheduleUrl);
     ['move', 'zoom', 'viewreset', 'resize'].forEach(function (ev) { map.on(ev, placeProbe); });
     window.addEventListener('resize', function () { map.invalidateSize(); });
@@ -408,7 +505,8 @@
       $('panel').classList.toggle('cmp', compare);
       if (!grid) $('fblabelA').textContent = compare ? 'Left side' : 'Discharge';
       if (grid && compare) syncPairs('A');
-      $('swipe').style.display = compare ? 'block' : 'none';
+      if (!compare && isDiff()) { $('fill').value = 'depth'; $('fill').dispatchEvent(new Event('change')); }
+      $('swipe').style.display = (compare && !isDiff()) ? 'block' : 'none';
       updateSwipePos();
       applySelection();
     });
@@ -429,10 +527,29 @@
         applySelection();
       }
     });
-    $('fill').addEventListener('change', function () { syncFillSeg(); updateLegend(); redrawFill(); scheduleUrl(); });
+    $('fill').addEventListener('change', function () {
+      syncFillSeg();
+      var d = isDiff();
+      $('diffopts').style.display = d ? 'block' : 'none';
+      $('swipe').style.display = (compare && !d) ? 'block' : 'none';
+      clearTrails();
+      updateSwipePos();
+      if (d && !compare) { $('cmp').checked = true; $('cmp').dispatchEvent(new Event('change')); return; }
+      refreshDiffView().then(scheduleUrl);
+    });
+    var hasWse = (m.discharges || []).some(function (d) { return d.wse; });
+    if (hasWse) $('dmeasure').value = 'wse';
+    else { var wo = $('dmeasure').querySelector('option[value=wse]'); wo.disabled = true; wo.textContent = 'Water surface elevation (rebuild the site to enable)'; }
+    $('dmeasure').addEventListener('change', function () { diffState.key = ''; refreshDiffView().then(scheduleUrl); });
+    $('drange').addEventListener('input', diffRangeChanged);
+    if (m.discharges.length < 2) $('diffbtn').style.display = 'none';
+    $('ramp2').addEventListener('change', function () {
+      $('ramp').value = $('ramp2').value;
+      $('ramp').dispatchEvent(new Event('change'));
+    });
     $('ramp').addEventListener('change', function () {
       var m = $('fill').value;
-      if (m === 'none') return;
+      if (m === 'none' || m === 'diff') return;
       rampSel[m] = $('ramp').value;
       clearFills(); updateLegend(); redrawFill(); scheduleUrl();
     });
@@ -451,33 +568,95 @@
     $('spd').addEventListener('input', function () { $('spdv').textContent = $('spd').value + 'x'; });
     function rangeLabel() {
       var r = velRange();
-      $('vseg').style.left = 'calc(8px + (100% - 16px) * ' + r.lo + ')';
-      $('vseg').style.width = 'calc((100% - 16px) * ' + (r.hi - r.lo) + ')';
+      $('vseg').style.left = 'calc(10px + (100% - 20px) * ' + r.lo + ')';
+      $('vseg').style.width = 'calc((100% - 20px) * ' + (r.hi - r.lo) + ')';
+      if (document.activeElement !== $('vlon')) $('vlon').value = r.lo > 0 ? +(r.lo * manifest.maxSpeed).toFixed(2) : '';
+      if (document.activeElement !== $('vhin')) $('vhin').value = r.hi < 1 ? +(r.hi * manifest.maxSpeed).toFixed(2) : '';
+      $('vunit').textContent = manifest.units.velocity;
       // whichever thumb is nearer the middle of its travel stays grabbable when the two meet
       $('vlo').style.zIndex = r.lo >= 0.5 ? 3 : 2;
       $('vhi').style.zIndex = r.lo >= 0.5 ? 2 : 3;
       $('vrange').textContent = r.active
-        ? 'from ' + (r.lo * manifest.maxSpeed).toFixed(1) + ' to ' + (r.hi >= 1 ? 'max' : (r.hi * manifest.maxSpeed).toFixed(1)) + ' ' + manifest.units.velocity
-        : 'all';
+        ? (r.lo * manifest.maxSpeed).toFixed(1) + ' to ' + (r.hi >= 1 ? 'max' : (r.hi * manifest.maxSpeed).toFixed(1)) + ' ' + manifest.units.velocity
+        : 'All';
     }
     function rangeChanged(which) {
       var lo = $('vlo'), hi = $('vhi');
       if (+lo.value > +hi.value) { if (which === 'lo') hi.value = lo.value; else lo.value = hi.value; }
       rangeLabel();
-      if ($('vshade').checked) { clearFills(); redrawFill(); }
+      clearTimeout(rangeChanged.t);
+      rangeChanged.t = setTimeout(function () { clearFills(); redrawFill(); updateLegend(); }, 60);
       scheduleUrl();
     }
     $('vlo').addEventListener('input', function () { rangeChanged('lo'); });
     $('vhi').addEventListener('input', function () { rangeChanged('hi'); });
-    $('vshade').addEventListener('change', function () { clearFills(); redrawFill(); });
+    function boxChanged() {
+      var lo = parseFloat($('vlon').value), hi = parseFloat($('vhin').value), ms = manifest.maxSpeed;
+      $('vlo').value = isFinite(lo) ? Math.max(0, Math.min(1, lo / ms)) : 0;
+      $('vhi').value = isFinite(hi) ? Math.max(0, Math.min(1, hi / ms)) : 1;
+      rangeChanged(+$('vlo').value > +$('vhi').value ? 'lo' : 'hi');
+    }
+    $('vlon').addEventListener('input', boxChanged);
+    $('vhin').addEventListener('input', boxChanged);
+    $('vlon').addEventListener('blur', rangeLabel);
+    $('vhin').addEventListener('blur', rangeLabel);
     rangeLabel();
     function minConfLabel() {
       var f = +$('minconf').value;
-      $('minconfv').textContent = f > 0 ? 'below ' + Math.round(f * 100) + '% confidence' : 'off';
+      $('minconfv').textContent = f > 0 ? 'Hide below ' + Math.round(f * 100) + '%' : 'Show all';
     }
     $('minconf').addEventListener('input', minConfLabel);
     minConfLabel();
     if (m.confidence) $('confwrap').style.display = 'block';
+    var feet = /ft|feet/i.test(String((manifest.units && manifest.units.length) || 'ft'));
+    var mind = $('mind'), unitName = (manifest.units && manifest.units.length) || 'ft';
+    mind.max = feet ? 1 : 0.3; mind.step = feet ? 0.01 : 0.005; mind.value = feet ? 0.05 : 0.015;
+    defaultMinDepth = +mind.value;
+    function minDepthLabel() { $('mindv').textContent = +mind.value > 0 ? (+mind.value).toFixed(feet ? 2 : 3) + ' ' + unitName : 'Off'; }
+    minDepthLabel();
+    var mdTimer = null;
+    mind.addEventListener('input', function () {
+      minDepthLabel();
+      clearTimeout(mdTimer);
+      mdTimer = setTimeout(function () { clearFills(); redrawFill(); scheduleUrl(); }, 80);
+    });
+    function lineOpLabel() { $('lineopv').textContent = Math.round(+$('lineop').value * 100) + '%'; }
+    lineOpLabel();
+    $('lineop').addEventListener('input', lineOpLabel);
+    function filtState() {
+      return {
+        mind: Math.abs(+$('mind').value - defaultMinDepth) > 1e-9,
+        vel: velRange().active,
+        conf: !!manifest.confidence && +$('minconf').value > 0
+      };
+    }
+    function updateFiltSum() {
+      var st = filtState();
+      [['mind', 'mindv'], ['vel', 'vrange'], ['conf', 'minconfv']].forEach(function (p) {
+        $(p[1]).classList.toggle('chg', st[p[0]]);
+        $('rst_' + p[0]).classList.toggle('on', st[p[0]]);
+      });
+      var any = st.mind || st.vel || st.conf;
+      $('filtsum').textContent = any ? 'changed' : '';
+      $('fclear').classList.toggle('on', any);
+    }
+    function refreshAfterFilter() { clearFills(); redrawFill(); updateLegend(); scheduleUrl(); updateFiltSum(); }
+    ['input', 'change'].forEach(function (ev) { $('filtsec').addEventListener(ev, function () { setTimeout(updateFiltSum, 0); }); });
+    $('rst_mind').addEventListener('click', function () { $('mind').value = defaultMinDepth; minDepthLabel(); refreshAfterFilter(); });
+    $('rst_vel').addEventListener('click', function () { $('vlo').value = 0; $('vhi').value = 1; rangeLabel(); refreshAfterFilter(); });
+    $('rst_conf').addEventListener('click', function () { $('minconf').value = 0; minConfLabel(); refreshAfterFilter(); });
+    $('fclear').addEventListener('click', function () {
+      $('mind').value = defaultMinDepth; minDepthLabel();
+      $('vlo').value = 0; $('vhi').value = 1; rangeLabel();
+      $('minconf').value = 0; minConfLabel();
+      refreshAfterFilter();
+    });
+    $('cclear').addEventListener('click', function () {
+      ['cdmin', 'cdmax', 'cvmin', 'cvmax'].forEach(function (id) { $(id).value = ''; });
+      $('hl').checked = false;
+      critChanged(); redrawFill(); scheduleUrl();
+    });
+    setTimeout(updateFiltSum, 600);
     $('op').addEventListener('input', redrawFill);
     $('vmax').addEventListener('input', velScaleChanged);
     $('stretch').addEventListener('change', velScaleChanged);
@@ -495,6 +674,9 @@
         secs.forEach(function (o) { if (o !== d && o.open) o.open = false; });
       });
     });
+    function tipSelect(el) { if (el && el.tagName === 'SELECT' && el.selectedIndex >= 0) el.title = el.options[el.selectedIndex].text; }
+    $('panel').addEventListener('change', function (e) { tipSelect(e.target); });
+    setInterval(function () { Array.prototype.forEach.call(document.querySelectorAll('#panel select'), tipSelect); }, 1500);
     setupSwipe();
     updateLegend();
 
@@ -517,8 +699,13 @@
         }
         $('qb').value = b;
       }
+      var md = parseFloat(P.get('md'));
+      if (isFinite(md) && md >= 0) { $('mind').value = md; $('mind').dispatchEvent(new Event('input')); }
       var f = P.get('f');
-      if (f === 'velocity' || f === 'none') { $('fill').value = f; $('fill').dispatchEvent(new Event('change')); }
+      if (P.get('dm') && ['depth', 'velocity', 'wse'].indexOf(P.get('dm')) >= 0) $('dmeasure').value = P.get('dm');
+      var dr0 = parseFloat(P.get('dr')); if (isFinite(dr0) && dr0 > 0) diffState.pending = dr0;
+      if (f === 'diff' && ids.length > 1 && !c) { $('cmp').checked = true; $('cmp').dispatchEvent(new Event('change')); }
+      if (f === 'velocity' || f === 'none' || (f === 'diff' && ids.length > 1)) { $('fill').value = f; $('fill').dispatchEvent(new Event('change')); }
       if (P.get('l') === '0') { $('showlines').checked = false; $('showlines').dispatchEvent(new Event('change')); }
       var lo = parseFloat(P.get('vlo')), hi = parseFloat(P.get('vhi'));
       if (isFinite(lo) || isFinite(hi)) {
@@ -685,18 +872,19 @@
 
   // Colour raster for one scenario and one shading mode, built once and kept.
   function fillFor(scn, mode) {
-    var vr = velRange(), dim = $('vshade') && $('vshade').checked && vr.active;
-    var key = mode + ':' + rampSel[mode] + (dim ? '|' + vr.lo + '-' + vr.hi : '');
+    var vr = velRange(), dim = vr.active;
+    var key = mode + ':' + rampSel[mode] + (dim ? '|' + vr.lo + '-' + vr.hi : '') + '|d' + minD16();
     if (scn.fills[key]) return scn.fills[key];
     var W = manifest.width, H = manifest.height;
     var c = document.createElement('canvas'); c.width = W; c.height = H;
     var x = c.getContext('2d');
     var out = x.createImageData(W, H), o = out.data, rgba = [0, 0, 0, 0];
     var dsrc = scn.depth.data, fsrc = scn.flow.data;
-    var vp = velParams();
+    var vp = velParams(), md16 = minD16();
     for (var i = 0, n = W * H; i < n; i++) {
       var p = i * 4;
       if (dsrc[p + 3] === 0) continue;
+      if (md16 && (dsrc[p] * 256 + dsrc[p + 1]) < md16) continue;
       if (mode === 'depth') depthColor((dsrc[p] * 256 + dsrc[p + 1]) / 65535, rgba);
       else {
         var tv = (fsrc[p + 2] / 255 * manifest.maxSpeed) / vp.vmax;
@@ -730,8 +918,8 @@
       updateSwipePos();
       clearTrails();
       renderMetrics();
-      redrawFill();
-      status('');
+      diffState.key = '';
+      prepDiff().then(function () { redrawFill(); updateLegend(); status(''); });
       scheduleUrl();
     }).catch(function (e) { fail(e.message || String(e)); });
   }
@@ -761,6 +949,144 @@
 
   function swipeX() { return Math.round(map.getSize().x * swipeFrac); }
 
+
+  // ---- difference map ----------------------------------------------------
+  var DIFF_STOPS = [[0, [33, 102, 172, 235]], [0.35, [103, 169, 207, 215]], [0.46, [209, 229, 240, 120]], [0.5, [247, 247, 247, 0]],
+                    [0.54, [253, 219, 199, 120]], [0.65, [239, 138, 98, 215]], [1, [178, 24, 43, 235]]];
+  var DIFF_LEG = 'linear-gradient(90deg, rgb(33,102,172), rgb(103,169,207), rgb(247,247,247), rgb(239,138,98), rgb(178,24,43))';
+  var diffState = { key: '', range: 1, pending: null, info: null, unavailable: '' };
+  function isDiff() { return $('fill').value === 'diff'; }
+  function diffMeasure() { return $('dmeasure').value; }
+  function diffUnit(m) { return m === 'velocity' ? manifest.units.velocity : manifest.units.length; }
+  function diffTitle(m) { return (m === 'depth' ? 'Depth change' : m === 'velocity' ? 'Velocity change' : 'Water surface change') + ' (left minus right)'; }
+  function niceRange(v) {
+    var steps = [0.05, 0.1, 0.2, 0.25, 0.5, 1, 1.5, 2, 3, 5, 10, 20, 50, 100];
+    for (var i = 0; i < steps.length; i++) if (steps[i] >= v) return steps[i];
+    return Math.ceil(v);
+  }
+  function fmtNum(v) { var a = Math.abs(v); return String(parseFloat((+v).toFixed(a >= 10 ? 0 : a >= 1 ? 2 : 3))); }
+  function ensureWse(sc) {
+    if (sc.wse !== undefined) return Promise.resolve(sc);
+    if (!sc.meta.wse) { sc.wse = null; return Promise.resolve(sc); }
+    return loadImg(base + 'wse_' + sc.id + '.png').then(function (im) { sc.wse = im; return sc; }, function () { sc.wse = null; return sc; });
+  }
+  // Loads whatever the current difference needs (the water surface images load only when asked for).
+  function prepDiff() {
+    if (!isDiff() || !setA.scn || !setB.scn || diffMeasure() !== 'wse') return Promise.resolve();
+    return Promise.all([ensureWse(setA.scn), ensureWse(setB.scn)]);
+  }
+  function diffData(a, b, m) {
+    a.diffs = a.diffs || {};
+    var k = b.id + '|' + m;
+    if (a.diffs[k]) return a.diffs[k];
+    var W = manifest.width, H = manifest.height, n = W * H, out = new Float32Array(n);
+    var da = a.depth.data, db = b.depth.data, fa = a.flow.data, fb = b.flow.data;
+    var md = manifest.maxDepth, ms = manifest.maxSpeed;
+    var wmin = manifest.wseMin, wspan = (manifest.wseMax - manifest.wseMin);
+    var wa = a.wse && a.wse.data, wb = b.wse && b.wse.data;
+    var feet = /ft|feet/i.test(String(manifest.units.length));
+    var thr = m === 'velocity' ? (feet ? 0.1 : 0.03) : (feet ? 0.05 : 0.015);
+    var up = 0, down = 0, sum = 0, cnt = 0, big = 0;
+    for (var i = 0; i < n; i++) {
+      var p = i * 4, va, vb;
+      if (m === 'wse') {
+        if (!wa || !wb || !wa[p + 3] || !wb[p + 3]) { out[i] = NaN; continue; }
+        va = wmin + (wa[p] * 256 + wa[p + 1]) / 65535 * wspan;
+        vb = wmin + (wb[p] * 256 + wb[p + 1]) / 65535 * wspan;
+      } else {
+        var aa = da[p + 3], ab = db[p + 3];
+        if (!aa && !ab) { out[i] = NaN; continue; }
+        if (m === 'depth') {
+          va = aa ? (da[p] * 256 + da[p + 1]) / 65535 * md : 0;
+          vb = ab ? (db[p] * 256 + db[p + 1]) / 65535 * md : 0;
+        } else {
+          va = aa ? fa[p + 2] / 255 * ms : 0;
+          vb = ab ? fb[p + 2] / 255 * ms : 0;
+        }
+      }
+      var d = va - vb;
+      out[i] = d; cnt++; sum += d;
+      if (d > thr) up++; else if (d < -thr) down++;
+      if (Math.abs(d) > big) big = Math.abs(d);
+    }
+    // 98th percentile of the size of the change, from a sample, picks a sensible first color range
+    var step = Math.max(1, Math.floor(n / 200000)), sample = [];
+    for (var j = 0; j < n; j += step) if (out[j] === out[j]) sample.push(Math.abs(out[j]));
+    sample.sort(function (x, y) { return x - y; });
+    var p98 = sample.length ? sample[Math.min(sample.length - 1, Math.floor(sample.length * 0.98))] : 0;
+    var b3 = manifest.bounds3857, pxm = (b3[2] - b3[0]) / W, ac = pxm * pxm / 4046.856;
+    return (a.diffs[k] = { arr: out, p98: p98, max: big, up: up * ac, down: down * ac, area: cnt * ac, mean: cnt ? sum / cnt : 0 });
+  }
+  function diffCanvas() {
+    var a = setA.scn, b = setB.scn;
+    if (!a || !b) return null;
+    var m = diffMeasure();
+    diffState.unavailable = '';
+    if (m === 'wse') {
+      if (a.wse === undefined || b.wse === undefined) return null;
+      if (!a.wse || !b.wse) {
+        diffState.unavailable = 'Water surface is not stored for ' + (!a.wse ? a.meta.label : b.meta.label) + '. Rebuild the site with a water surface raster to see this.';
+        updateDiffUI(null);
+        return null;
+      }
+    }
+    var dd = diffData(a, b, m), key = a.id + '|' + b.id + '|' + m;
+    if (diffState.key !== key) {
+      diffState.key = key;
+      var r = diffState.pending != null ? diffState.pending : niceRange(Math.max(dd.p98, 0.05));
+      diffState.pending = null;
+      diffState.range = r;
+      var sl = $('drange'), top = niceRange(Math.max(dd.max, r));
+      sl.max = String(Math.max(top, r * 2)); sl.min = String(+(sl.max / 100).toFixed(3)); sl.step = String(+(sl.max / 100).toFixed(3)); sl.value = String(r);
+    }
+    updateDiffUI(dd);
+    var ck = key + '|' + diffState.range;
+    a.diffFills = a.diffFills || {};
+    if (a.diffFills[ck]) return a.diffFills[ck];
+    if (Object.keys(a.diffFills).length > 6) a.diffFills = {};
+    var W = manifest.width, H = manifest.height, c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    var x = c.getContext('2d'), img = x.createImageData(W, H), o = img.data, arr = dd.arr, rg = diffState.range, rgba = [0, 0, 0, 0];
+    for (var i = 0, n = W * H; i < n; i++) {
+      var d = arr[i];
+      if (d !== d) continue;
+      var t = 0.5 + 0.5 * Math.max(-1, Math.min(1, d / rg));
+      rampColor(DIFF_STOPS, t, rgba);
+      var p = i * 4;
+      o[p] = rgba[0]; o[p + 1] = rgba[1]; o[p + 2] = rgba[2]; o[p + 3] = rgba[3];
+    }
+    x.putImageData(img, 0, 0);
+    return (a.diffFills[ck] = c);
+  }
+  function updateDiffUI(dd) {
+    var m = diffMeasure(), u = diffUnit(m);
+    $('drangev').textContent = '\u00b1' + fmtNum(diffState.range) + ' ' + u;
+    diffState.info = dd;
+    if (diffState.unavailable) { $('dsum').textContent = diffState.unavailable; return; }
+    if (!dd) { $('dsum').textContent = ''; return; }
+    var sign = dd.mean >= 0 ? '+' : '\u2212';
+    $('dsum').textContent = 'Higher on ' + dd.up.toFixed(1) + ' ac, lower on ' + dd.down.toFixed(1) + ' ac. Mean change ' + sign + fmtNum(Math.abs(dd.mean)) + ' ' + u +
+      ' across ' + dd.area.toFixed(1) + ' ac compared.' + (m === 'wse' ? ' Water surface compares only where both scenarios are wet.' : '');
+  }
+  function diffAt(idx) {
+    var a = setA.scn, b = setB.scn, m = diffMeasure();
+    if (!a || !b) return '';
+    var dd = a.diffs && a.diffs[b.id + '|' + m];
+    if (!dd) return '';
+    var d = dd.arr[idx / 4];
+    if (d !== d) return 'No change value here';
+    return diffTitle(m).replace(' (left minus right)', '') + ': ' + (d >= 0 ? '+' : '\u2212') + Math.abs(d).toFixed(2) + ' ' + diffUnit(m);
+  }
+  function diffRangeChanged() {
+    diffState.range = +$('drange').value;
+    updateDiffUI(diffState.info);
+    clearTimeout(diffRangeChanged.t);
+    diffRangeChanged.t = setTimeout(function () { redrawFill(); updateLegend(); scheduleUrl(); }, 60);
+  }
+  function refreshDiffView() {
+    return prepDiff().then(function () { redrawFill(); updateLegend(); });
+  }
+
   // Shading under the particles. Also used for the saved picture.
   function paintFill(c, w, h) {
     c.clearRect(0, 0, w, h);
@@ -781,6 +1107,11 @@
       }
       c.globalAlpha = 1;
     }
+    if (mode === 'diff') {
+      var dcv = setB.scn ? diffCanvas() : null;
+      if (dcv) { c.globalAlpha = +$('op').value; c.imageSmoothingEnabled = true; c.drawImage(dcv, dx, dy, dw, dh); c.globalAlpha = 1; }
+      return;
+    }
     if (mode !== 'none') drawLayer(function (s) { return fillFor(s, mode); }, +$('op').value);
     if ($('hl').checked && critActive()) drawLayer(hlFor, 0.9);
   }
@@ -797,7 +1128,7 @@
   // The colour scheme list follows the shading: depth schemes while showing depth, velocity schemes while showing velocity.
   function syncRampSelect(mode) {
     var wrap = $('rampwrap');
-    if (mode === 'none') { wrap.style.display = 'none'; return; }
+    if (mode === 'none' || mode === 'diff') { $('rampwrap2').style.display = 'none'; wrap.style.display = 'none'; return; }
     wrap.style.display = 'block';
     var sel = $('ramp');
     if (sel.getAttribute('data-mode') !== mode) {
@@ -807,6 +1138,14 @@
     }
     sel.value = rampSel[mode];
     $('ramplabel').textContent = (mode === 'depth' ? 'Depth' : 'Velocity') + ' color scheme';
+    var sel2 = $('ramp2');
+    if (sel2.getAttribute('data-mode') !== mode) {
+      sel2.innerHTML = sel.innerHTML;
+      sel2.setAttribute('data-mode', mode);
+    }
+    sel2.value = rampSel[mode];
+    $('ramplabel2').textContent = $('ramplabel').textContent;
+    $('rampwrap2').style.display = 'block';
   }
   function updateLegend() {
     var mode = $('fill').value;
@@ -815,6 +1154,16 @@
     $('legend').style.display = show ? 'block' : 'none';
     $('velopts').style.display = mode === 'velocity' ? 'block' : 'none';
     if (!show) return;
+    $('legmin').textContent = '0';
+    if (mode === 'diff') {
+      var dm = diffMeasure(), du = diffUnit(dm), dr = fmtNum(diffState.range);
+      $('legtitle').textContent = diffTitle(dm);
+      $('legbar').style.background = DIFF_LEG;
+      $('legmin').textContent = '\u2212' + dr;
+      $('legmid').textContent = '0';
+      $('legmax').textContent = '+' + dr + ' ' + du;
+      return;
+    }
     $('legtitle').textContent = mode === 'depth' ? 'Water depth' : 'Velocity';
     $('legbar').style.background = legendCss(mode);
     var L2 = legendLabels(mode);
@@ -835,20 +1184,38 @@
     var ground = pxm * Math.cos(lat * Math.PI / 180);   // metres on the ground per raster pixel
     return ground * ground;
   }
-  // One pass over a scenario: wet cell count, depth sum, speed histogram. Kept on the scenario.
-  function metricsFor(scn) {
-    if (scn.metrics) return scn.metrics;
-    var W = manifest.width, H = manifest.height, d = scn.depth.data, f = scn.flow.data;
-    var hist = new Uint32Array(256), n = 0, sumD = 0, sumB = 0, maxDv = 0;
-    for (var i = 0, t = W * H; i < t; i++) {
-      var p = i * 4;
-      if (d[p + 3] === 0) continue;
-      n++;
-      var dv = d[p] * 256 + d[p + 1];
-      sumD += dv; if (dv > maxDv) maxDv = dv;
-      var bb = f[p + 2]; sumB += bb; hist[bb]++;
+  // ---- what the numbers are measured over: the whole site, the map view, or an area the user draws ----
+  var scopeState = { poly: null, drawing: false, pts: [], layer: null, serial: 0 };
+  function scopeInfo() {
+    var W = manifest.width, H = manifest.height, m = $('mscope').value;
+    if (m === 'view' && map) {
+      var v = computeView();
+      if (v.ok) return { key: 'view:' + v.i0 + ',' + v.i1 + ',' + v.j0 + ',' + v.j1, i0: v.i0, i1: v.i1, j0: v.j0, j1: v.j1, mask: null, label: 'current map view' };
     }
-    return (scn.metrics = { n: n, sumD: sumD, sumB: sumB, maxDv: maxDv, hist: hist });
+    if (m === 'poly') return scopeState.poly || { key: 'none', i0: 0, i1: -1, j0: 0, j1: -1, mask: null, label: 'drawn area' };
+    return { key: 'site', i0: 0, i1: W - 1, j0: 0, j1: H - 1, mask: null, label: 'whole site' };
+  }
+  // One pass over a scenario inside the chosen scope: wet cell count, depth sum, speed histogram. Kept on the scenario.
+  function metricsFor(scn) {
+    var sc = scopeInfo();
+    scn.mcache = scn.mcache || {};
+    if (scn.mcache[sc.key]) return scn.mcache[sc.key];
+    if (Object.keys(scn.mcache).length > 12) scn.mcache = {};
+    var W = manifest.width, d = scn.depth.data, f = scn.flow.data;
+    var hist = new Uint32Array(256), n = 0, sumD = 0, sumB = 0, maxDv = 0;
+    for (var j = sc.j0; j <= sc.j1; j++) {
+      for (var i = sc.i0; i <= sc.i1; i++) {
+        var idx = j * W + i;
+        if (sc.mask && !sc.mask[idx]) continue;
+        var p = idx * 4;
+        if (d[p + 3] === 0) continue;
+        n++;
+        var dv = d[p] * 256 + d[p + 1];
+        sumD += dv; if (dv > maxDv) maxDv = dv;
+        var bb = f[p + 2]; sumB += bb; hist[bb]++;
+      }
+    }
+    return (scn.mcache[sc.key] = { n: n, sumD: sumD, sumB: sumB, maxDv: maxDv, hist: hist });
   }
   function histPct(hist, n, q) {
     var target = q * n, c = 0;
@@ -902,17 +1269,21 @@
     return parts.join(', ');
   }
   function countCrit(scn, c) {
-    var key = critKey(c);
+    var sc = scopeInfo(), key = critKey(c) + '#' + sc.key;
     if (scn.crit && scn.crit.key === key) return scn.crit.n;
-    var r = critRaw(c), W = manifest.width, H = manifest.height, d = scn.depth.data, f = scn.flow.data, n = 0;
-    for (var i = 0, t = W * H; i < t; i++) {
-      var p = i * 4;
-      if (d[p + 3] === 0) continue;
-      var dv = d[p] * 256 + d[p + 1];
-      if (dv < r.d0 || dv > r.d1) continue;
-      var b = f[p + 2];
-      if (b < r.v0 || b > r.v1) continue;
-      n++;
+    var r = critRaw(c), W = manifest.width, d = scn.depth.data, f = scn.flow.data, n = 0;
+    for (var j = sc.j0; j <= sc.j1; j++) {
+      for (var i = sc.i0; i <= sc.i1; i++) {
+        var idx = j * W + i;
+        if (sc.mask && !sc.mask[idx]) continue;
+        var p = idx * 4;
+        if (d[p + 3] === 0) continue;
+        var dv = d[p] * 256 + d[p + 1];
+        if (dv < r.d0 || dv > r.d1) continue;
+        var b = f[p + 2];
+        if (b < r.v0 || b > r.v1) continue;
+        n++;
+      }
     }
     scn.crit = { key: key, n: n };
     return n;
@@ -951,12 +1322,17 @@
       ['Median velocity', 'medV', u.velocity, false],
       ['Fast water', 'p90V', u.velocity, false]
     ];
-    var h = '<table class="mt"><tr><th></th>' + (B ? '<th>Left</th><th>Right</th><th>Change</th>' : '<th>' + (setA.scn.meta.label || '') + '</th>') + '</tr>';
+    var sc0 = scopeInfo();
+    lastExport = { left: setA.scn.meta.label + (setA.scn.meta.value ? ' (' + setA.scn.meta.value + ')' : ''),
+                   right: B ? setB.scn.meta.label + (setB.scn.meta.value ? ' (' + setB.scn.meta.value + ')' : '') : null,
+                   scope: sc0.label, rows: [], crit: '' };
+    var h = '<table class="mt"><tr><th></th>' + (B ? '<th>Left</th><th>Right</th><th title="Left minus right">L minus R</th>' : '<th>' + (setA.scn.meta.label || '') + '</th>') + '</tr>';
     rows.forEach(function (r) {
       var k = r[1];
       h += '<tr><td' + (k === 'p90V' ? ' title="Velocity that 90 percent of the wet area is below"' : '') + '>' + r[0] + ' <small style="display:inline;color:#7f93b0">' + r[2] + '</small></td>';
+      lastExport.rows.push({ name: r[0], unit: r[2], a: A[k], b: B ? B[k] : null, d: B ? A[k] - B[k] : null, p: (B && r[3]) ? pct(B[k], A[k]) : NaN });
       if (B) {
-        h += '<td>' + fmtN(A[k]) + '</td><td>' + fmtN(B[k]) + '</td><td>' + fmtS(B[k] - A[k]) + (r[3] ? '<small>' + fmtPct(pct(A[k], B[k])) + '</small>' : '') + '</td>';
+        h += '<td>' + fmtN(A[k]) + '</td><td>' + fmtN(B[k]) + '</td><td>' + fmtS(A[k] - B[k]) + (r[3] ? '<small>' + fmtPct(pct(B[k], A[k])) + '</small>' : '') + '</td>';
       } else h += '<td>' + fmtN(A[k]) + '</td>';
       h += '</tr>';
     });
@@ -967,9 +1343,12 @@
       var c = crit(), nA = countCrit(setA.scn, c), nB = B ? countCrit(setB.scn, c) : 0;
       var area = function (n) { return n * pxAreaM2() / (us ? 4046.8564224 : 10000); };
       var sh = function (n, tot) { return tot ? (n / tot * 100).toFixed(1) + '%' : 'n/a'; };
-      cr = '<table class="mt"><tr><th></th>' + (B ? '<th>Left</th><th>Right</th><th>Change</th>' : '<th></th>') + '</tr>';
+      cr = '<table class="mt"><tr><th></th>' + (B ? '<th>Left</th><th>Right</th><th title="Left minus right">L minus R</th>' : '<th></th>') + '</tr>';
+      lastExport.crit = critText();
+      lastExport.rows.push({ name: 'Habitat area', unit: us ? 'ac' : 'ha', a: area(nA), b: B ? area(nB) : null, d: B ? area(nA) - area(nB) : null, p: B ? pct(nB, nA) : NaN });
+      lastExport.rows.push({ name: 'Share of wet area', unit: '%', a: A.n ? nA / A.n * 100 : NaN, b: B ? (B.n ? nB / B.n * 100 : NaN) : null, d: null, p: NaN });
       cr += '<tr><td>Area <small style="display:inline;color:#7f93b0">' + (us ? 'ac' : 'ha') + '</small></td>';
-      if (B) cr += '<td>' + fmtN(area(nA)) + '</td><td>' + fmtN(area(nB)) + '</td><td>' + fmtS(area(nB) - area(nA)) + '<small>' + fmtPct(pct(nA, nB)) + '</small></td>';
+      if (B) cr += '<td>' + fmtN(area(nA)) + '</td><td>' + fmtN(area(nB)) + '</td><td>' + fmtS(area(nA) - area(nB)) + '<small>' + fmtPct(pct(nB, nA)) + '</small></td>';
       else cr += '<td>' + fmtN(area(nA)) + '</td>';
       cr += '</tr><tr><td>Share of wet area</td>';
       if (B) cr += '<td>' + sh(nA, A.n) + '</td><td>' + sh(nB, B.n) + '</td><td></td>'; else cr += '<td>' + sh(nA, A.n) + '</td>';
@@ -982,8 +1361,106 @@
                                 : fmtN(A.area) + (us ? ' ac' : ' ha') + ', mean depth ' + fmtN(A.meanD) + ' ' + u.length;
     $('critunits').textContent = u.length + ' for depth and ' + u.velocity + ' for velocity';
   }
-  var critTimer = null;
+  var critTimer = null, lastExport = null;
+  // ---- export of the metrics table ----
+  function exportTable() {
+    var e = lastExport;
+    if (!e) return null;
+    var cmp = e.right !== null, num = function (x) { return (x === null || !isFinite(x)) ? '' : +x.toFixed(3); };
+    var out = [['Site', manifest.title], ['Measured over', e.scope], ['Left', e.left]];
+    if (cmp) out.push(['Right', e.right]);
+    if (e.crit) out.push(['Habitat criteria', e.crit]);
+    out.push([]);
+    out.push(cmp ? ['Metric', 'Unit', 'Left', 'Right', 'Left minus right', 'Percent of right'] : ['Metric', 'Unit', e.left]);
+    e.rows.forEach(function (r) { out.push(cmp ? [r.name, r.unit, num(r.a), num(r.b), num(r.d), num(r.p)] : [r.name, r.unit, num(r.a)]); });
+    return out;
+  }
+  function copyTable() {
+    var t = exportTable();
+    if (!t) return;
+    var text = t.map(function (r) { return r.join('\t'); }).join('\n');
+    var done = function () { status('Table copied. Paste it into Excel or Word.'); setTimeout(function () { status(''); }, 2200); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, function () { window.prompt('Copy this table', text); });
+    else window.prompt('Copy this table', text);
+  }
+  function csvTable() {
+    var t = exportTable();
+    if (!t) return;
+    var q = function (v) { v = String(v === undefined ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    var text = t.map(function (r) { return r.map(q).join(','); }).join('\r\n');
+    download(new Blob([text], { type: 'text/csv' }), siteId + '_metrics.csv');
+  }
+
+  // ---- drawing an area to measure ----
+  function polyStyle() { return { pane: 'scopepane', color: '#ff9633', weight: 2, fillColor: '#ff9633', fillOpacity: 0.08, interactive: false }; }
+  function updatePolyUI() {
+    var isPoly = $('mscope').value === 'poly';
+    $('polybtns').style.display = isPoly ? 'flex' : 'none';
+    $('polydraw').textContent = scopeState.drawing ? 'Finish' : (scopeState.poly ? 'Redraw area' : 'Draw area');
+    $('mscopenote').textContent = $('mscope').value === 'view' ? 'Updates as you pan and zoom.'
+      : isPoly ? (scopeState.drawing ? 'Click the corners on the map, then double click or press Finish. Esc cancels.' : (scopeState.poly ? '' : 'Press Draw area, then click the corners on the map.')) : '';
+    if (scopeState.layer && map) { if (isPoly) { if (!map.hasLayer(scopeState.layer)) scopeState.layer.addTo(map); } else map.removeLayer(scopeState.layer); }
+  }
+  function drawPreview() {
+    if (scopeState.layer) map.removeLayer(scopeState.layer);
+    var pts = scopeState.pts;
+    scopeState.layer = pts.length > 2 ? L.polygon(pts, polyStyle()) : L.polyline(pts, polyStyle());
+    scopeState.layer.addTo(map);
+  }
+  function endDrawMode() {
+    scopeState.drawing = false;
+    if (map) { map.doubleClickZoom.enable(); map.getContainer().style.cursor = ''; }
+    status('');
+  }
+  function clearPoly() {
+    if (scopeState.layer && map) map.removeLayer(scopeState.layer);
+    scopeState.layer = null; scopeState.poly = null; scopeState.pts = [];
+    endDrawMode(); updatePolyUI(); renderMetrics();
+  }
+  function startDraw() {
+    if (scopeState.layer && map) map.removeLayer(scopeState.layer);
+    scopeState.layer = null; scopeState.poly = null; scopeState.pts = []; scopeState.drawing = true;
+    map.doubleClickZoom.disable();
+    map.getContainer().style.cursor = 'crosshair';
+    hideProbe();
+    updatePolyUI(); renderMetrics();
+  }
+  function finishDraw() {
+    if (!scopeState.drawing) return;
+    var pts = scopeState.pts;
+    endDrawMode();
+    if (pts.length < 3) { clearPoly(); return; }
+    var b = manifest.bounds3857, W = manifest.width, H = manifest.height, R = 6378137;
+    var cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    var c = cv.getContext('2d');
+    c.beginPath();
+    pts.forEach(function (ll, k) {
+      var x = ll.lng * Math.PI / 180 * R, y = Math.log(Math.tan(Math.PI / 4 + ll.lat * Math.PI / 360)) * R;
+      var px = (x - b[0]) / (b[2] - b[0]) * W, py = (b[3] - y) / (b[3] - b[1]) * H;
+      if (k) c.lineTo(px, py); else c.moveTo(px, py);
+    });
+    c.closePath(); c.fillStyle = '#000'; c.fill();
+    var a = c.getImageData(0, 0, W, H).data, mask = new Uint8Array(W * H), i0 = W, i1 = -1, j0 = H, j1 = -1;
+    for (var j = 0; j < H; j++) for (var i = 0; i < W; i++) {
+      if (a[(j * W + i) * 4 + 3] > 127) { mask[j * W + i] = 1; if (i < i0) i0 = i; if (i > i1) i1 = i; if (j < j0) j0 = j; if (j > j1) j1 = j; }
+    }
+    if (i1 < 0) { clearPoly(); status('That area is outside the modelled site.'); setTimeout(function () { status(''); }, 2500); return; }
+    scopeState.poly = { key: 'poly' + (++scopeState.serial), i0: i0, i1: i1, j0: j0, j1: j1, mask: mask, label: 'drawn area' };
+    updatePolyUI(); renderMetrics();
+  }
+  // A minimum above its maximum can never match anything, so say so instead of quietly showing 0.
+  function critCheck() {
+    var c = crit(), msgs = [];
+    [['cdmin', 'cdmax', c.dmin, c.dmax, 'Depth'], ['cvmin', 'cvmax', c.vmin, c.vmax, 'Velocity']].forEach(function (p) {
+      var bad = p[2] !== null && p[3] !== null && p[2] > p[3];
+      $(p[0]).classList.toggle('bad', bad); $(p[1]).classList.toggle('bad', bad);
+      if (bad) msgs.push(p[4] + ' minimum is above its maximum, so no cells can match.');
+    });
+    $('critwarn').textContent = msgs.join(' ');
+    $('critwarn').style.display = msgs.length ? 'block' : 'none';
+  }
   function critChanged() {
+    critCheck();
     clearTimeout(critTimer);
     critTimer = setTimeout(function () {
       renderMetrics();
@@ -1007,7 +1484,9 @@
     if ($('fill').value !== 'depth') q.set('f', $('fill').value);
     if (rampSel.depth !== RAMP_DEFAULT.depth) q.set('rd', rampSel.depth);
     if (rampSel.velocity !== RAMP_DEFAULT.velocity) q.set('rv', rampSel.velocity);
+    if (isDiff()) { q.set('dm', diffMeasure()); q.set('dr', String(diffState.range)); }
     if (!linesOn) q.set('l', '0');
+    if ($('mind') && Math.abs(+$('mind').value - defaultMinDepth) > 1e-9) q.set('md', $('mind').value);
     var vr = velRange();
     if (vr.active) { q.set('vlo', vr.lo.toFixed(2)); q.set('vhi', vr.hi.toFixed(2)); }
     if (critActive()) {
@@ -1040,6 +1519,17 @@
     $('tagA').style.right = (w - x + 22) + 'px';
     $('tagB').style.right = 'auto';
     $('tagB').style.left = (x + 22) + 'px';
+    // In change mode there is no swipe bar, so one label names the difference
+    if (isDiff() && setB.scn) {
+      $('tagA').textContent = setA.scn.meta.label + ' minus ' + setB.scn.meta.label;
+      $('tagA').style.display = 'block'; $('tagB').style.display = 'none';
+      $('tagA').style.right = 'auto';
+      $('tagA').style.left = Math.max(12, Math.round(w / 2 - $('tagA').offsetWidth / 2)) + 'px';
+    } else if (setA.scn) {
+      $('tagA').textContent = setA.scn.meta.label;
+      $('tagA').style.display = compare ? 'block' : 'none';
+      $('tagB').style.display = compare ? 'block' : 'none';
+    }
   }
   function setupSwipe() {
     var el = $('swipe'), drag = false;
@@ -1086,12 +1576,31 @@
     var cap = (compare ? 14000 : 22000) * (window.innerWidth < 700 ? 0.5 : 1);
     [setA, setB].forEach(function (set) {
       var want = 0;
-      if (set.scn && vw.ok) want = Math.max(300, Math.min(cap, Math.round(dens * DENS_K * visibleWetArea(set.scn, vw))));
+      if (set.scn && vw.ok && !(set === setB && isDiff())) want = Math.max(300, Math.min(cap, Math.round(dens * DENS_K * visibleWetArea(set.scn, vw))));
       while (set.particles.length < want) set.particles.push({ i: 0, j: 0, pi: 0, pj: 0, life: 0 });
       if (set.particles.length > want) set.particles.length = want;
     });
   }
 
+  var vrampCache = {};
+  var DARK_LINE = 'rgba(12,22,44,0.9)';
+  function lineColor(key) {
+    var mode = $('lineclr') ? $('lineclr').value : 'light';
+    if (mode === 'dark') return DARK_LINE;
+    if (mode !== 'velocity') return ramp[key];
+    var id = rampSel.velocity, arr = vrampCache[id];
+    if (!arr) {
+      arr = []; var st = rampFind('velocity', id).stops, o = [0, 0, 0, 0];
+      for (var k = 0; k < 32; k++) { rampColor(st, k / 31, o); arr.push('rgba(' + Math.round(o[0]) + ',' + Math.round(o[1]) + ',' + Math.round(o[2]) + ',0.95)'); }
+      vrampCache[id] = arr;
+    }
+    return arr[key];
+  }
+  // Smallest depth shown, as the 16 bit value stored in the depth images (0 means show everything).
+  function minD16() {
+    var e = $('mind'), v = e ? +e.value : 0;
+    return v > 0 ? Math.ceil(v / manifest.maxDepth * 65535) : 0;
+  }
   var ramp = [];
   (function () {
     for (var k = 0; k < 32; k++) {
@@ -1102,7 +1611,7 @@
 
   function stepSet(c, set, v, speedK, perPx) {
     var vr = velRange(), minS = vr.lo, maxS = vr.hi, minC = manifest.confidence ? +$('minconf').value : 0, dd = set.scn.depth.data;
-    var W = manifest.width, H = manifest.height, f = set.scn.flow.data, buckets = {};
+    var W = manifest.width, H = manifest.height, f = set.scn.flow.data, buckets = {}, md16 = minD16();
     var parts = set.particles;
     if (set.scn.meta.flow === false) return;
     for (var n = 0; n < parts.length; n++) {
@@ -1112,6 +1621,7 @@
       if (ii < 0 || jj < 0 || ii >= W || jj >= H) { p.life = 0; continue; }
       var idx = (jj * W + ii) * 4;
       if (f[idx + 3] === 0) { p.life = 0; continue; }
+      if (md16 && (dd[idx] * 256 + dd[idx + 1]) < md16) { p.life = 0; continue; }
       var ux = f[idx] / 255 * 2 - 1, uy = f[idx + 1] / 255 * 2 - 1, s = f[idx + 2] / 255;
       if (s < minS || (maxS < 1 && s > maxS)) { p.life = 0; continue; }
       if (minC > 0 && dd[idx + 2] / 255 < minC) { p.life = 0; continue; }
@@ -1122,8 +1632,9 @@
       var cc = Math.min(31, (s * 31) | 0);
       (buckets[cc] || (buckets[cc] = [])).push(p);
     }
+    c.globalAlpha = +$('lineop').value;
     for (var key in buckets) {
-      c.strokeStyle = ramp[key];
+      c.strokeStyle = lineColor(key);
       c.beginPath();
       var arr = buckets[key];
       for (var q = 0; q < arr.length; q++) {
@@ -1133,6 +1644,7 @@
       }
       c.stroke();
     }
+    c.globalAlpha = 1;
   }
 
   function frame() {
@@ -1148,7 +1660,7 @@
     if (++frameNo % 8 === 0) setParticleCount();
     var speedK = +$('spd').value, perPx = (Math.abs(v.sx) + Math.abs(v.sy)) / 2;
     ctx.lineWidth = 1.4; ctx.lineCap = 'round';
-    if (compare && setB.scn) {
+    if (compare && setB.scn && !isDiff()) {
       var sw = swipeX();
       ctx.save(); ctx.beginPath(); ctx.rect(0, 0, sw, size.y); ctx.clip(); stepSet(ctx, setA, v, speedK, perPx); ctx.restore();
       ctx.save(); ctx.beginPath(); ctx.rect(sw, 0, size.x - sw, size.y); ctx.clip(); stepSet(ctx, setB, v, speedK, perPx); ctx.restore();
@@ -1184,6 +1696,7 @@
     placeProbe();
   }
   function onMapClick(e) {
+    if (scopeState.drawing) { scopeState.pts.push(e.latlng); drawPreview(); return; }
     if (!setA.scn) return;
     var R = 6378137, b = manifest.bounds3857;
     var x = e.latlng.lng * Math.PI / 180 * R;
@@ -1194,7 +1707,8 @@
     var idx = (j * manifest.width + i) * 4, html;
     if (compare && setB.scn) {
       html = '<b>' + setA.scn.meta.label + '</b><br>' + describe(setA.scn, idx) +
-             '<br><b>' + setB.scn.meta.label + '</b><br>' + describe(setB.scn, idx);
+             '<br><b>' + setB.scn.meta.label + '</b><br>' + describe(setB.scn, idx) +
+             (isDiff() && diffAt(idx) ? '<br><b>' + diffAt(idx) + '</b>' : '');
     } else {
       html = '<b>' + setA.scn.meta.label + '</b><br>' + describe(setA.scn, idx);
     }
@@ -1273,7 +1787,7 @@
     var cmpOn = compare && setB.scn;
     if (cmpOn) {
       var sw = swipeX();
-      c.fillStyle = '#fff'; c.fillRect(sw - 1.5, 0, 3, size.y);
+      if (!isDiff()) { c.fillStyle = '#fff'; c.fillRect(sw - 1.5, 0, 3, size.y); }
     }
     c.font = '600 14px -apple-system, Segoe UI, Roboto, sans-serif';
     c.textBaseline = 'middle';
@@ -1284,7 +1798,9 @@
       c.fillStyle = '#fff'; c.textAlign = 'left'; c.fillText(text, left + 10, y + 14.5);
     }
     chip(manifest.title, 12, 12, 'left');
-    if (cmpOn) {
+    if (cmpOn && isDiff()) {
+      chip(setA.scn.meta.label + ' minus ' + setB.scn.meta.label, 12, 46, 'left');
+    } else if (cmpOn) {
       chip(setA.scn.meta.label, 12, 46, 'left');
       chip(setB.scn.meta.label, size.x - 12, 46, 'right');
     } else {
@@ -1304,7 +1820,18 @@
     }
     if ($('hl').checked && critActive()) { chip('Orange cells: ' + critText(), 12, yy, 'left'); yy += 34; }
     var mode = $('fill').value;
-    if (mode !== 'none') {
+    if (mode === 'diff') {
+      var dlw = 190, dlx = 12, dly = size.y - 84, dm2 = diffMeasure(), dr2 = fmtNum(diffState.range);
+      c.fillStyle = 'rgba(14,27,51,0.88)'; roundRect(c, dlx, dly, dlw + 20, 72, 6); c.fill();
+      var dg = c.createLinearGradient(dlx + 10, 0, dlx + 10 + dlw, 0);
+      [[0, '#2166ac'], [0.25, '#67a9cf'], [0.5, '#f7f7f7'], [0.75, '#ef8a62'], [1, '#b2182b']].forEach(function (st) { dg.addColorStop(st[0], st[1]); });
+      c.fillStyle = dg; c.fillRect(dlx + 10, dly + 22, dlw, 10);
+      c.fillStyle = '#e8eef7'; c.font = '12px -apple-system, Segoe UI, Roboto, sans-serif'; c.textAlign = 'left';
+      c.fillText(diffTitle(dm2), dlx + 10, dly + 12);
+      c.fillText('\u2212' + dr2, dlx + 10, dly + 42);
+      c.textAlign = 'center'; c.fillText('0', dlx + 10 + dlw / 2, dly + 42);
+      c.textAlign = 'right'; c.fillText('+' + dr2 + ' ' + diffUnit(dm2), dlx + 10 + dlw, dly + 42);
+    } else if (mode !== 'none') {
       var lw = 190, lx = 12, ly = size.y - 84;
       c.fillStyle = 'rgba(14,27,51,0.88)'; roundRect(c, lx, ly, lw + 20, 72, 6); c.fill();
       var g = c.createLinearGradient(lx + 10, 0, lx + 10 + lw, 0);
