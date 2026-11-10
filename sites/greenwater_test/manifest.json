@@ -1,13 +1,13 @@
 {
  "site": "greenwater_test",
- "title": "greenwater test",
+ "title": "Greenwater RM4.0 Flow Model Viewer",
  "description": "",
- "width": 2214,
- "height": 2755,
+ "width": 1646,
+ "height": 2048,
  "bounds3857": [
   -13537887.203686647,
   5961350.86291098,
-  -13534911.695563868,
+  -13534911.395012265,
   5965053.448673517
  ],
  "bounds4326": [
@@ -17,14 +17,15 @@
   ],
   [
    47.1405975889621,
-   -121.5861804533309
+   -121.58617775342991
   ]
  ],
- "maxDepth": 11.710262298583984,
- "maxSpeed": 11.989075660705566,
+ "maxDepth": 11.685798645019531,
+ "maxSpeed": 11.974763870239258,
  "confidence": true,
- "wseMin": 1842.47216796875,
- "wseMax": 1934.645751953125,
+ "built": 1794328689,
+ "wseMin": 1842.478759765625,
+ "wseMax": 1934.6444091796875,
  "units": {
   "length": "ft",
   "velocity": "ft/s"
@@ -34,7 +35,7 @@
    "id": "Q2_ec",
    "name": "Q2_ec",
    "label": "Q2 (Existing Conditions)",
-   "value": "~900ish?",
+   "value": "1267 cfs",
    "flow": true,
    "wse": true
   },
@@ -42,7 +43,7 @@
    "id": "Q10_ec",
    "name": "Q10_ec",
    "label": "Q10 (Existing Conditions)",
-   "value": "~4000ish",
+   "value": "3439 cfs",
    "flow": true,
    "wse": true
   },
@@ -50,7 +51,7 @@
    "id": "Q100_ec",
    "name": "Q100_ec",
    "label": "Q100 (Existing Conditions)",
-   "value": "",
+   "value": "10534 cfs",
    "flow": true,
    "wse": true
   },

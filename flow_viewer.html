@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta name="robots" content="noindex, nofollow">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Flow Viewer</title>
@@ -51,6 +52,28 @@
   #panel .two select { width: auto; flex: 1 1 0; min-width: 0; }
   #lineopts.off { opacity: 0.4; pointer-events: none; }
   .viewblock { margin-top: 6px; }
+  #switcher { position: absolute; z-index: 1000; top: 12px; left: 364px; display: flex; align-items: center; background: rgba(14,27,51,0.94); border: 1px solid #1b3f95; border-radius: 22px; padding: 4px; }
+  #switcher a, #switcher span { padding: 7px 14px; border-radius: 16px; font-size: 13px; text-decoration: none; color: #e8eef7; }
+  #switcher a:hover { background: #132447; }
+  #switcher span.cur { background: #019fc4; color: #fff; font-weight: 600; }
+  #switcher span.off { color: #5d7396; cursor: default; }
+  @media (max-width: 700px) { #switcher { top: auto; bottom: calc(46px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); } #switcher a, #switcher span { padding: 6px 12px; font-size: 12px; } }
+  #toggle, #helpbtn { width: auto !important; margin: 0 !important; padding: 2px 9px !important; }
+  #helpbtn { font-weight: 700; min-width: 28px; }
+  .hb { display: flex; gap: 5px; flex: none; }
+  .hintchip { position: fixed; z-index: 4000; background: #0e1b33; border: 1px solid #ffd23f; border-radius: 12px; padding: 15px 17px 13px; color: #fff; font-size: 16px; line-height: 1.4; box-shadow: 0 6px 22px rgba(0,0,0,0.55); }
+  .hintchip b { display: block; margin-bottom: 3px; font-size: 17.5px; }
+  .hintchip .hbtns { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+  .hintchip .hbtns button { width: auto; margin: 0; background: #132447; border: 1px solid #1b3f95; color: #fff; border-radius: 18px; padding: 8px 20px; font-size: 15px; cursor: pointer; font-family: inherit; }
+  .hintchip .hbtns .go { background: #019fc4; border-color: #019fc4; }
+  .hintchip .hbtns .skip { background: none; border: 0; color: #9fb2cc; text-decoration: underline; padding: 6px 2px; }
+  .hintchip .hstep { margin-left: auto; font-size: 13px; color: #9fb2cc; }
+  .hintchip .arrow { position: absolute; width: 13px; height: 13px; background: #0e1b33; border: 1px solid #ffd23f; transform: rotate(45deg); display: none; }
+  .hintchip.side .arrow { display: block; left: -7px; border-top: 0; border-right: 0; }
+  .hintchip.above .arrow { display: block; bottom: -7px; border-top: 0; border-left: 0; }
+  .hintchip.below .arrow { display: block; top: -7px; border-bottom: 0; border-right: 0; }
+  .hintglow { outline: 3px solid rgba(255,210,63,0.95) !important; outline-offset: 2px; animation: hintpulse 1.4s ease-in-out infinite; }
+  @keyframes hintpulse { 0%, 100% { outline-color: rgba(255,210,63,0.95); } 50% { outline-color: rgba(255,210,63,0.25); } }
   .subrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 8px 0 2px; }
   .subrow .sub { margin: 0; }
   .headbtns { display: flex; gap: 5px; flex: none; }
@@ -91,7 +114,7 @@
   #critwarn { font-size: 11px; color: #f2b36b; margin-top: 2px; display: none; }
   .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; background: rgb(255,150,30); margin-right: 6px; vertical-align: -1px; }
   #metnote { margin-top: 8px; font-size: 11px; color: #7f93b0; line-height: 1.4; }
-  #panel .two select#flowA, #panel .two select#flowB { flex: 0 0 76px; }
+  #panel .two select#flowA, #panel .two select#flowB { flex: 0 0 auto; width: auto; max-width: 60%; }
   #panel .two select#scenA, #panel .two select#scenB { flex: 1 1 0; text-overflow: ellipsis; }
   .dual { position: relative; height: 34px; margin-top: 2px; }
   .dual .track { position: absolute; left: 10px; right: 10px; top: 15px; height: 4px; border-radius: 2px; background: #2a3d66; }
@@ -160,10 +183,11 @@
 <div id="status">Loading...</div>
 <div id="err"></div>
 
+<div id="switcher" role="navigation" aria-label="Other viewers for this place"><a id="swtour" href="#">Tour</a><a id="swterrain" href="#">Terrain</a><span class="cur">Flow</span></div>
 <div id="panel">
   <div class="head">
     <h1 id="title">Flow Viewer</h1>
-    <button id="toggle" type="button" title="Show or hide controls">&#9776;</button>
+    <div class="hb"><button id="helpbtn" type="button" title="Show the tips again" aria-label="Show the tips">?</button><button id="toggle" type="button" title="Show or hide controls">&#9776;</button></div>
   </div>
   <div class="subrow">
     <span class="sub" id="sub"></span>
@@ -440,6 +464,7 @@
     document.title = m.title + ' | Flow Viewer';
     $('title').textContent = m.title;
     $('sub').textContent = m.discharges.length + ' scenario' + (m.discharges.length === 1 ? '' : 's');
+    loadLinks(m);
 
     ['q', 'qb'].forEach(function (id) {
       var sel = $(id);
@@ -1486,6 +1511,118 @@
     return 'Wet area ' + fmtN(d.area) + (us ? ' ac' : ' ha') + ', mean depth ' + fmtN(d.meanD) + ' ' + u.length + ', mean velocity ' + fmtN(d.meanV) + ' ' + u.velocity;
   }
 
+  // ---- Tour, Terrain, Flow: the same place in the other viewers (begin) ----
+  // The terrain viewer and the 360 tour send their own addresses along (?terrain=, ?tour=). They are remembered for this site, and a
+  // site's manifest may also name them (terrain_url, tour_url), so the pill is there when this page is opened on its own.
+  var linkTour = '', linkTerrain = '';
+  function okUrl(u) { return /^https?:\/\//i.test(u || '') ? u : ''; }
+  function terrainHref() {
+    var u; try { u = new URL(linkTerrain, location.href); } catch (e) { return linkTerrain; }
+    if (map) { var c = map.getCenter(); u.searchParams.set('lat', c.lat.toFixed(5)); u.searchParams.set('lng', c.lng.toFixed(5)); u.searchParams.set('z', map.getZoom().toFixed(2)); }
+    u.searchParams.set('flow', stateUrl());                           // the Flow button over there comes back to this exact view
+    if (linkTour) u.searchParams.set('tour', linkTour);
+    return u.toString();
+  }
+  function showSwitcher() {
+    var t = $('swtour'), r = $('swterrain');
+    function setOff(el, off, label) {
+      var n = document.createElement(off ? 'span' : 'a');
+      n.id = el.id; n.textContent = label; if (off) { n.className = 'off'; n.title = 'No ' + label.toLowerCase() + ' linked for this site'; } else n.href = '#';
+      el.parentNode.replaceChild(n, el); return n;
+    }
+    t = setOff(t, !linkTour, 'Tour'); r = setOff(r, !linkTerrain, 'Terrain');
+    if (linkTour) t.href = linkTour;
+    if (linkTerrain) { r.href = terrainHref(); r.onmouseenter = function () { r.href = terrainHref(); }; r.onclick = function (e) { e.preventDefault(); location.href = terrainHref(); }; }
+  }
+  function loadLinks(m) {
+    var saved = {}; try { saved = JSON.parse(localStorage.getItem('flowLinks:' + siteId) || '{}') || {}; } catch (e) {}
+    linkTour = okUrl(params.get('tour')) || okUrl(m.tour_url) || okUrl(saved.tour);
+    linkTerrain = okUrl(params.get('terrain')) || okUrl(m.terrain_url) || okUrl(saved.terrain);
+    try { localStorage.setItem('flowLinks:' + siteId, JSON.stringify({ tour: linkTour, terrain: linkTerrain })); } catch (e) {}
+    showSwitcher();
+  }
+  // ---- Tour, Terrain, Flow (end) ----
+
+  // ---- first visit tips (same look as the terrain viewer) ----
+  var tips = { list: [], i: 0, el: null, target: null, onUse: null };
+  function onPhone() { return !!(window.matchMedia && window.matchMedia('(max-width: 700px)').matches); }
+  function tipsDone() { try { return JSON.parse(localStorage.getItem('flowTips') || '{}'); } catch (e) { return {}; } }
+  function tipMark(id) { var d = tipsDone(); d[id] = 1; try { localStorage.setItem('flowTips', JSON.stringify(d)); } catch (e) {} }
+  function seen(el) { if (!el) return false; var r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden'; }
+  function tipDefs() {
+    var phone = onPhone();
+    return [
+      { id: 'around', title: 'Getting around', find: null,
+        text: phone ? 'Drag to move and pinch to zoom. Tap the water to read depth and velocity.' : 'Drag to move and scroll to zoom. Click the water to read depth and velocity.' },
+      { id: 'fill', title: 'Show water as', side: true, find: function () { return $('fillseg'); }, text: 'Switch the water between depth and velocity, or turn the shading off.' },
+      { id: 'scen', title: 'Scenario', side: true, find: function () { return $('scenA').style.display !== 'none' ? $('scenA') : $('flowA'); }, text: 'Pick a flow and a scenario to see it on the map.' },
+      { id: 'compare', title: 'Compare', side: true, find: function () { return $('cmp').parentNode; }, text: 'Tick this to swipe between two scenarios side by side.' },
+      { id: 'anim', title: 'Flow animation', side: true, find: function () { return $('showlines').parentNode; }, text: 'Show or hide the moving flow lines. Pause stops them.' },
+      { id: 'metrics', title: 'Metrics', side: true, find: function () { return $('metsec').querySelector('summary'); }, text: 'Wet area and depth numbers for the scenario you are looking at.' },
+      { id: 'habitat', title: 'Habitat criteria', side: true, find: function () { return $('habsec').querySelector('summary'); }, text: 'Set depth and velocity limits to see where the water meets them.' },
+      { id: 'switch', title: 'Tour, Terrain, Flow', find: function () { return (linkTour || linkTerrain) ? $('switcher') : null; }, text: 'Jump to this place in the tour or the terrain viewer.' }
+    ];
+  }
+  function hideTip() {
+    if (tips.el) { tips.el.remove(); tips.el = null; }
+    if (tips.target) { tips.target.classList.remove('hintglow'); if (tips.onUse) tips.target.removeEventListener('click', tips.onUse); }
+    tips.target = null; tips.onUse = null;
+  }
+  function placeTip() {
+    var el = tips.el, d = tips.list[tips.i]; if (!el || !d) return;
+    var vw = window.innerWidth, vh = window.innerHeight, w = Math.min(340, vw - 16), left, top, t = d.find ? d.find() : null;
+    el.style.width = w + 'px'; el.classList.remove('above', 'below', 'side');
+    if (d.find && !seen(t)) { el.style.display = 'none'; return; }
+    el.style.display = '';
+    var h = el.offsetHeight;
+    if (!d.find) { left = (vw - w) / 2; top = Math.max(8, vh * 0.3); }
+    else if (d.side && !onPhone()) {
+      var rs = t.getBoundingClientRect(), pr = $('panel').getBoundingClientRect();
+      left = Math.min(vw - w - 8, pr.right + 14); top = Math.max(8, Math.min(vh - h - 8, rs.top + rs.height / 2 - h / 2));
+      el.classList.add('side'); el.querySelector('.arrow').style.top = Math.max(10, Math.min(h - 22, rs.top + rs.height / 2 - top - 6)) + 'px';
+    } else {
+      var r = t.getBoundingClientRect(), cx = r.left + r.width / 2, above = (r.top + r.height / 2) > vh / 2;
+      left = Math.max(8, Math.min(vw - w - 8, cx - w / 2)); top = above ? r.top - h - 14 : r.bottom + 14; top = Math.max(8, Math.min(vh - h - 8, top));
+      el.classList.add(above ? 'above' : 'below'); el.querySelector('.arrow').style.left = Math.max(10, Math.min(w - 22, cx - left - 6)) + 'px';
+    }
+    el.style.left = left + 'px'; el.style.top = top + 'px';
+  }
+  function showTip() {
+    hideTip();
+    while (tips.i < tips.list.length) { var d0 = tips.list[tips.i]; if (!d0.find || seen(d0.find())) break; tips.i++; }
+    if (tips.i >= tips.list.length) return;
+    var d = tips.list[tips.i], t = d.find ? d.find() : null, last = tips.i === tips.list.length - 1;
+    var el = document.createElement('div'); el.className = 'hintchip'; el.setAttribute('role', 'dialog');
+    el.innerHTML = '<b></b><span></span><div class="hbtns"><button type="button" class="go"></button><button type="button" class="skip">Skip tips</button><span class="hstep"></span></div><i class="arrow"></i>';
+    el.querySelector('b').textContent = d.title; el.querySelector('span').textContent = d.text;
+    el.querySelector('.go').textContent = last ? 'Done' : 'Got it'; el.querySelector('.hstep').textContent = (tips.i + 1) + ' of ' + tips.list.length;
+    el.querySelector('.go').addEventListener('click', function () { tipMark(d.id); nextTip(); });
+    el.querySelector('.skip').addEventListener('click', function () { tips.list.forEach(function (x) { tipMark(x.id); }); hideTip(); });
+    document.body.appendChild(el); tips.el = el;
+    if (t) { try { if (d.side) t.scrollIntoView({ block: 'nearest' }); } catch (e) {} tips.target = t; t.classList.add('hintglow'); tips.onUse = function () { tipMark(d.id); setTimeout(nextTip, 150); }; t.addEventListener('click', tips.onUse); }
+    placeTip();
+  }
+  function nextTip() { tips.i++; showTip(); }
+  function startTips(force) {
+    var done = force ? {} : tipsDone();
+    tips.list = tipDefs().filter(function (x) { return !done[x.id]; }); tips.i = 0;
+    if (!tips.list.length) return;
+    showTip();
+  }
+  window.addEventListener('resize', placeTip);
+  $('toggle').addEventListener('click', function () { setTimeout(placeTip, 60); });
+  $('helpbtn').addEventListener('click', function () {
+    try { localStorage.removeItem('flowTips'); } catch (e) {}
+    if (onPhone() && $('panel').classList.contains('collapsed')) $('toggle').click();
+    setTimeout(function () { startTips(true); }, 350);
+  });
+  (function waitThenTips(n) {                                          // once the first scenario is drawn
+    var st = $('status');
+    if ((st && getComputedStyle(st).display !== 'none') || !seen($('fillseg'))) { if (n < 40) setTimeout(function () { waitThenTips(n + 1); }, 400); else startTips(false); return; }
+    setTimeout(function () { startTips(false); }, 1200);
+  })(0);
+  // ---- end tips ----
+
   // ---- shareable links ------------------------------------------------------
   // The address always describes the current view, so copying it (or the Link button) shares exactly this.
   var urlTimer = null;
@@ -1508,6 +1645,8 @@
       if ($('hl').checked) q.set('hl', '1');
     }
     if (pinSpec) { q.set('pin', pinSpec); if (pinName) q.set('pn', pinName); }
+    if (linkTour) q.set('tour', linkTour);                               // a shared link keeps the way to the other viewers
+    if (linkTerrain) q.set('terrain', linkTerrain);
     if (map) { var ct = map.getCenter(); q.set('ll', ct.lat.toFixed(5) + ',' + ct.lng.toFixed(5)); q.set('z', map.getZoom().toFixed(2)); }
     return location.href.split('#')[0].split('?')[0] + '?' + q.toString().replace(/%2C/g, ',');
   }
