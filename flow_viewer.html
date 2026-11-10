@@ -7,6 +7,8 @@
 <title>Flow Viewer</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://alex-spsseg.github.io/spsseg_tours/shared/spsseg_nav.js"></script>
+<script>window.SpssegNav || document.write('<script src="spsseg_nav.js"><\/script>');</script>
 <style>
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; font-family: -apple-system, Segoe UI, Roboto, sans-serif; background: #0e1b33; }
@@ -52,28 +54,11 @@
   #panel .two select { width: auto; flex: 1 1 0; min-width: 0; }
   #lineopts.off { opacity: 0.4; pointer-events: none; }
   .viewblock { margin-top: 6px; }
-  #switcher { position: absolute; z-index: 1000; top: 12px; left: 364px; display: flex; align-items: center; background: rgba(14,27,51,0.94); border: 1px solid #1b3f95; border-radius: 22px; padding: 4px; }
-  #switcher a, #switcher span { padding: 7px 14px; border-radius: 16px; font-size: 13px; text-decoration: none; color: #e8eef7; }
-  #switcher a:hover { background: #132447; }
-  #switcher span.cur { background: #019fc4; color: #fff; font-weight: 600; }
-  #switcher span.off { color: #5d7396; cursor: default; }
-  @media (max-width: 700px) { #switcher { top: auto; bottom: calc(46px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); } #switcher a, #switcher span { padding: 6px 12px; font-size: 12px; } }
+  #switcher { position: absolute; z-index: 1000; top: 12px; left: 364px; }
+  @media (max-width: 700px) { #switcher { top: auto; bottom: calc(46px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); } }
   #toggle, #helpbtn { width: auto !important; margin: 0 !important; padding: 2px 9px !important; }
   #helpbtn { font-weight: 700; min-width: 28px; }
   .hb { display: flex; gap: 5px; flex: none; }
-  .hintchip { position: fixed; z-index: 4000; background: #0e1b33; border: 1px solid #ffd23f; border-radius: 12px; padding: 15px 17px 13px; color: #fff; font-size: 16px; line-height: 1.4; box-shadow: 0 6px 22px rgba(0,0,0,0.55); }
-  .hintchip b { display: block; margin-bottom: 3px; font-size: 17.5px; }
-  .hintchip .hbtns { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
-  .hintchip .hbtns button { width: auto; margin: 0; background: #132447; border: 1px solid #1b3f95; color: #fff; border-radius: 18px; padding: 8px 20px; font-size: 15px; cursor: pointer; font-family: inherit; }
-  .hintchip .hbtns .go { background: #019fc4; border-color: #019fc4; }
-  .hintchip .hbtns .skip { background: none; border: 0; color: #9fb2cc; text-decoration: underline; padding: 6px 2px; }
-  .hintchip .hstep { margin-left: auto; font-size: 13px; color: #9fb2cc; }
-  .hintchip .arrow { position: absolute; width: 13px; height: 13px; background: #0e1b33; border: 1px solid #ffd23f; transform: rotate(45deg); display: none; }
-  .hintchip.side .arrow { display: block; left: -7px; border-top: 0; border-right: 0; }
-  .hintchip.above .arrow { display: block; bottom: -7px; border-top: 0; border-left: 0; }
-  .hintchip.below .arrow { display: block; top: -7px; border-bottom: 0; border-right: 0; }
-  .hintglow { outline: 3px solid rgba(255,210,63,0.95) !important; outline-offset: 2px; animation: hintpulse 1.4s ease-in-out infinite; }
-  @keyframes hintpulse { 0%, 100% { outline-color: rgba(255,210,63,0.95); } 50% { outline-color: rgba(255,210,63,0.25); } }
   .subrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 8px 0 2px; }
   .subrow .sub { margin: 0; }
   .headbtns { display: flex; gap: 5px; flex: none; }
@@ -183,7 +168,7 @@
 <div id="status">Loading...</div>
 <div id="err"></div>
 
-<div id="switcher" role="navigation" aria-label="Other viewers for this place"><a id="swtour" href="#">Tour</a><a id="swterrain" href="#">Terrain</a><span class="cur">Flow</span></div>
+<div id="switcher"></div>
 <div id="panel">
   <div class="head">
     <h1 id="title">Flow Viewer</h1>
@@ -1524,15 +1509,8 @@
     return u.toString();
   }
   function showSwitcher() {
-    var t = $('swtour'), r = $('swterrain');
-    function setOff(el, off, label) {
-      var n = document.createElement(off ? 'span' : 'a');
-      n.id = el.id; n.textContent = label; if (off) { n.className = 'off'; n.title = 'No ' + label.toLowerCase() + ' linked for this site'; } else n.href = '#';
-      el.parentNode.replaceChild(n, el); return n;
-    }
-    t = setOff(t, !linkTour, 'Tour'); r = setOff(r, !linkTerrain, 'Terrain');
-    if (linkTour) t.href = linkTour;
-    if (linkTerrain) { r.href = terrainHref(); r.onmouseenter = function () { r.href = terrainHref(); }; r.onclick = function (e) { e.preventDefault(); location.href = terrainHref(); }; }
+    if (!window.SpssegNav) return;
+    SpssegNav.renderPill($('switcher'), { current: 'flow', links: { tour: linkTour, terrain: linkTerrain }, hrefFor: { terrain: terrainHref }, showMissing: true });
   }
   function loadLinks(m) {
     var saved = {}; try { saved = JSON.parse(localStorage.getItem('flowLinks:' + siteId) || '{}') || {}; } catch (e) {}
@@ -1543,84 +1521,41 @@
   }
   // ---- Tour, Terrain, Flow (end) ----
 
-  // ---- first visit tips (same look as the terrain viewer) ----
-  var tips = { list: [], i: 0, el: null, target: null, onUse: null };
+  // ---- first visit tips: the engine and chip look are shared (spsseg_nav.js), the tips themselves are this viewer's ----
   function onPhone() { return !!(window.matchMedia && window.matchMedia('(max-width: 700px)').matches); }
-  function tipsDone() { try { return JSON.parse(localStorage.getItem('flowTips') || '{}'); } catch (e) { return {}; } }
-  function tipMark(id) { var d = tipsDone(); d[id] = 1; try { localStorage.setItem('flowTips', JSON.stringify(d)); } catch (e) {} }
   function seen(el) { if (!el) return false; var r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden'; }
   function tipDefs() {
     var phone = onPhone();
     return [
       { id: 'around', title: 'Getting around', find: null,
-        text: phone ? 'Drag to move and pinch to zoom. Tap the water to read depth and velocity.' : 'Drag to move and scroll to zoom. Click the water to read depth and velocity.' },
-      { id: 'fill', title: 'Show water as', side: true, find: function () { return $('fillseg'); }, text: 'Switch the water between depth and velocity, or turn the shading off.' },
-      { id: 'scen', title: 'Scenario', side: true, find: function () { return $('scenA').style.display !== 'none' ? $('scenA') : $('flowA'); }, text: 'Pick a flow and a scenario to see it on the map.' },
-      { id: 'compare', title: 'Compare', side: true, find: function () { return $('cmp').parentNode; }, text: 'Tick this to swipe between two scenarios side by side.' },
-      { id: 'anim', title: 'Flow animation', side: true, find: function () { return $('showlines').parentNode; }, text: 'Show or hide the moving flow lines. Pause stops them.' },
-      { id: 'metrics', title: 'Metrics', side: true, find: function () { return $('metsec').querySelector('summary'); }, text: 'Wet area and depth numbers for the scenario you are looking at.' },
-      { id: 'habitat', title: 'Habitat criteria', side: true, find: function () { return $('habsec').querySelector('summary'); }, text: 'Set depth and velocity limits to see where the water meets them.' },
-      { id: 'switch', title: 'Tour, Terrain, Flow', find: function () { return (linkTour || linkTerrain) ? $('switcher') : null; }, text: 'Jump to this place in the tour or the terrain viewer.' }
+        text: phone ? 'Drag to move and pinch to zoom. Tap the water to see how deep it is and how fast it is moving.'
+                    : 'Drag to move and scroll to zoom. Click the water to see how deep it is and how fast it is moving.' },
+      { id: 'fill', title: 'Show water as', side: true, find: function () { return $('fillseg'); },
+        text: 'Color the water by depth or velocity, show the change between two scenarios, or turn the shading off.' },
+      { id: 'scen', title: 'Scenario', side: true, find: function () { return $('scenA').style.display !== 'none' ? $('scenA') : $('flowA'); },
+        text: 'Choose a flow, then a scenario, and it is drawn on the map.' },
+      { id: 'compare', title: 'Compare', side: true, find: function () { return $('cmp').parentNode; },
+        text: 'Turn this on to compare two scenarios side by side. Drag the divider to swipe between them.' },
+      { id: 'anim', title: 'Flow animation', side: true, find: function () { return $('showlines').parentNode; },
+        text: 'Show or hide the moving flow lines. The Pause button holds them still.' },
+      { id: 'appearance', title: 'Appearance', side: true, find: function () { return $('appsec').querySelector('summary'); },
+        text: 'Change the color scheme, how strong the shading is, and how much the background imagery is dimmed. The flow lines can be adjusted here too.' },
+      { id: 'filters', title: 'Filters', side: true, find: function () { return $('filtsec').querySelector('summary'); },
+        text: 'Hide thin shallow edges, slow or fast water, and flow lines where the direction is uncertain. These only change what you see, not the numbers.' },
+      { id: 'metrics', title: 'Metrics', side: true, find: function () { return $('metsec').querySelector('summary'); },
+        text: 'See the wetted area and average depth for the scenario on screen.' },
+      { id: 'habitat', title: 'Habitat criteria', side: true, find: function () { return $('habsec').querySelector('summary'); },
+        text: 'Set depth and velocity ranges to highlight the parts of the water that meet them.' },
+      { id: 'switch', title: 'Tour, Terrain, Flow', find: function () { return (linkTour || linkTerrain) ? $('switcher') : null; },
+        text: 'Jump to this same place in the tour or the terrain viewer.' }
     ];
   }
-  function hideTip() {
-    if (tips.el) { tips.el.remove(); tips.el = null; }
-    if (tips.target) { tips.target.classList.remove('hintglow'); if (tips.onUse) tips.target.removeEventListener('click', tips.onUse); }
-    tips.target = null; tips.onUse = null;
-  }
-  function placeTip() {
-    var el = tips.el, d = tips.list[tips.i]; if (!el || !d) return;
-    var vw = window.innerWidth, vh = window.innerHeight, w = Math.min(340, vw - 16), left, top, t = d.find ? d.find() : null;
-    el.style.width = w + 'px'; el.classList.remove('above', 'below', 'side');
-    if (d.find && !seen(t)) { el.style.display = 'none'; return; }
-    el.style.display = '';
-    var h = el.offsetHeight;
-    if (!d.find) { left = (vw - w) / 2; top = Math.max(8, vh * 0.3); }
-    else if (d.side && !onPhone()) {
-      var rs = t.getBoundingClientRect(), pr = $('panel').getBoundingClientRect();
-      left = Math.min(vw - w - 8, pr.right + 14); top = Math.max(8, Math.min(vh - h - 8, rs.top + rs.height / 2 - h / 2));
-      el.classList.add('side'); el.querySelector('.arrow').style.top = Math.max(10, Math.min(h - 22, rs.top + rs.height / 2 - top - 6)) + 'px';
-    } else {
-      var r = t.getBoundingClientRect(), cx = r.left + r.width / 2, above = (r.top + r.height / 2) > vh / 2;
-      left = Math.max(8, Math.min(vw - w - 8, cx - w / 2)); top = above ? r.top - h - 14 : r.bottom + 14; top = Math.max(8, Math.min(vh - h - 8, top));
-      el.classList.add(above ? 'above' : 'below'); el.querySelector('.arrow').style.left = Math.max(10, Math.min(w - 22, cx - left - 6)) + 'px';
-    }
-    el.style.left = left + 'px'; el.style.top = top + 'px';
-  }
-  function showTip() {
-    hideTip();
-    while (tips.i < tips.list.length) { var d0 = tips.list[tips.i]; if (!d0.find || seen(d0.find())) break; tips.i++; }
-    if (tips.i >= tips.list.length) return;
-    var d = tips.list[tips.i], t = d.find ? d.find() : null, last = tips.i === tips.list.length - 1;
-    var el = document.createElement('div'); el.className = 'hintchip'; el.setAttribute('role', 'dialog');
-    el.innerHTML = '<b></b><span></span><div class="hbtns"><button type="button" class="go"></button><button type="button" class="skip">Skip tips</button><span class="hstep"></span></div><i class="arrow"></i>';
-    el.querySelector('b').textContent = d.title; el.querySelector('span').textContent = d.text;
-    el.querySelector('.go').textContent = last ? 'Done' : 'Got it'; el.querySelector('.hstep').textContent = (tips.i + 1) + ' of ' + tips.list.length;
-    el.querySelector('.go').addEventListener('click', function () { tipMark(d.id); nextTip(); });
-    el.querySelector('.skip').addEventListener('click', function () { tips.list.forEach(function (x) { tipMark(x.id); }); hideTip(); });
-    document.body.appendChild(el); tips.el = el;
-    if (t) { try { if (d.side) t.scrollIntoView({ block: 'nearest' }); } catch (e) {} tips.target = t; t.classList.add('hintglow'); tips.onUse = function () { tipMark(d.id); setTimeout(nextTip, 150); }; t.addEventListener('click', tips.onUse); }
-    placeTip();
-  }
-  function nextTip() { tips.i++; showTip(); }
-  function startTips(force) {
-    var done = force ? {} : tipsDone();
-    tips.list = tipDefs().filter(function (x) { return !done[x.id]; }); tips.i = 0;
-    if (!tips.list.length) return;
-    showTip();
-  }
-  window.addEventListener('resize', placeTip);
-  $('toggle').addEventListener('click', function () { setTimeout(placeTip, 60); });
-  $('helpbtn').addEventListener('click', function () {
-    try { localStorage.removeItem('flowTips'); } catch (e) {}
-    if (onPhone() && $('panel').classList.contains('collapsed')) $('toggle').click();
-    setTimeout(function () { startTips(true); }, 350);
-  });
-  (function waitThenTips(n) {                                          // once the first scenario is drawn
-    var st = $('status');
-    if ((st && getComputedStyle(st).display !== 'none') || !seen($('fillseg'))) { if (n < 40) setTimeout(function () { waitThenTips(n + 1); }, 400); else startTips(false); return; }
-    setTimeout(function () { startTips(false); }, 1200);
-  })(0);
+  var navTips = window.SpssegNav ? SpssegNav.tips({
+    key: 'flowTips', defs: tipDefs, panel: $('panel'), onPhone: onPhone, help: $('helpbtn'), toggle: $('toggle'),
+    beforeHelp: function () { if (onPhone() && $('panel').classList.contains('collapsed')) $('toggle').click(); }
+  }) : null;
+  if (navTips) navTips.startWhen(function () { var st = $('status'); return !(st && getComputedStyle(st).display !== 'none') && seen($('fillseg')); }, 1200);
+  else $('helpbtn').style.display = 'none';
   // ---- end tips ----
 
   // ---- shareable links ------------------------------------------------------
