@@ -132,5 +132,7 @@
   "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
   "attribution": "Esri, Maxar, Earthstar Geographics",
   "maxNativeZoom": 19
- }
+ },
+ "tour_url": "https://alex-spsseg.github.io/wria10_Greenwater/index.html?tour=20261002",
+ "terrain_url": "https://alex-spsseg.github.io/spsseg_terrain/terrain_viewer.html?site=greenwater2026dtm_merged"
 }
